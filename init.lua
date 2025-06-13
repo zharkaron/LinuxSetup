@@ -1,3 +1,5 @@
+-- init.lua
+
 -- Bootstrap lazy.nvim
 local function bootstrap_lazy()
   local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -20,6 +22,7 @@ local function bootstrap_lazy()
   return true
 end
 
+-- Plugin Setup
 local function setup_plugins()
   require("lazy").setup({
     {
@@ -27,9 +30,22 @@ local function setup_plugins()
       config = function()
         vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
         vim.api.nvim_set_keymap("i", "<C-g>", 'copilot#Toggle()', { expr = true, noremap = true, silent = true })
-        vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true, desc = "Enable Copilot" })
-        vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true, desc = "Disable Copilot" })
+        vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
+        vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
         vim.api.nvim_set_keymap("n", "<C-c>", ":echo 'Chatbox not supported with copilot.vim plugin'<CR>", { noremap = true, silent = true })
+      end,
+    },
+    {
+      "CopilotC-Nvim/CopilotChat.nvim",
+      dependencies = {
+        "github/copilot.vim",
+        "nvim-lua/plenary.nvim"
+      },
+      build = "make tiktoken",
+      config = function()
+        require("CopilotChat").setup({
+          debug = true,
+        })
       end,
     },
     {
@@ -124,44 +140,16 @@ local function setup_plugins()
       build = ":TSUpdate",
       config = function()
         require('nvim-treesitter.configs').setup({
-            ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css" },
-            highlight = { enable = true },
-            indent = { enable = true },
+          ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css" },
+          highlight = { enable = true },
+          indent = { enable = true },
         })
-      end,
-    },
-    {
-      "CopilotC-Nvim/CopilotChat.nvim",
-      dependencies = {
-        { "github/copilot.vim" },
-        { "nvim-lua/plenary.nvim" },
-      },
-      config = function()
-        local ok, chat = pcall(require, "CopilotChat")
-        if not ok then
-          vim.api.nvim_err_writeln("CopilotChat failed to load")
-          return
-        end
-
-        chat.setup({ debug = false })
-
-        if chat.toggle then
-          vim.keymap.set("n", "<leader>cc", chat.toggle, { desc = "Toggle Copilot Chat" })
-        end
-        if chat.explain then
-          vim.keymap.set("v", "<leader>ce", chat.explain, { desc = "Explain code with Copilot Chat" })
-        end
-        if chat.fix then
-          vim.keymap.set("v", "<leader>cf", chat.fix, { desc = "Fix code with Copilot Chat" })
-        end
-        if chat.docs then
-          vim.keymap.set("v", "<leader>cd", chat.docs, { desc = "Generate docs with Copilot Chat" })
-        end
       end,
     },
   })
 end
 
+-- Basic settings
 local function setup_basic_settings()
   vim.opt.number = true
   vim.opt.relativenumber = true
@@ -182,6 +170,7 @@ local function setup_basic_settings()
   vim.api.nvim_set_keymap('n', '<C-l>', '<C-w>l', { noremap = true, silent = true })
 end
 
+-- Git branch protection
 local function setup_git_branch_protection()
   local function check_git_branch()
     local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null")
@@ -207,6 +196,7 @@ local function setup_git_branch_protection()
   })
 end
 
+-- Run commands
 local function setup_run_commands()
   local function run_current_file()
     local ft = vim.bo.filetype
@@ -220,22 +210,19 @@ local function setup_run_commands()
         return
       end
       vim.cmd("belowright split | terminal python " .. vim.fn.shellescape(file))
-      vim.cmd("resize 15")
     elseif ft == "bash" or ft == "sh" then
       vim.cmd("belowright split | terminal bash " .. vim.fn.shellescape(file))
-      vim.cmd("resize 15")
     elseif ft == "zsh" then
       vim.cmd("belowright split | terminal zsh " .. vim.fn.shellescape(file))
-      vim.cmd("resize 15")
     elseif ft == "lua" then
       vim.cmd("belowright split | terminal lua " .. vim.fn.shellescape(file))
-      vim.cmd("resize 15")
     elseif ft == "javascript" then
       vim.cmd("belowright split | terminal node " .. vim.fn.shellescape(file))
-      vim.cmd("resize 15")
     else
       vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
+      return
     end
+    vim.cmd("resize 15")
   end
 
   local function open_custom_terminal()
@@ -250,5 +237,25 @@ local function setup_run_commands()
     pattern = "*",
     callback = function()
       vim.cmd("startinsert")
-      vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true
+      vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(0, "t", "<C-q>", "<C-\\><C-n>", { noremap = true, silent = true })
+    end,
+  })
+end
+
+-- Folding
+local function setup_folds()
+  vim.o.foldmethod = "expr"
+  vim.o.foldexpr = "nvim_treesitter#foldexpr()"
+  vim.o.foldenable = true
+end
+
+-- MAIN EXECUTION
+if bootstrap_lazy() then
+  setup_plugins()
+  setup_basic_settings()
+  setup_git_branch_protection()
+  setup_run_commands()
+  setup_folds()
+end
 
