@@ -130,6 +130,35 @@ local function setup_plugins()
         })
       end,
     },
+    {
+      "CopilotC-Nvim/CopilotChat.nvim",
+      dependencies = {
+        { "github/copilot.vim" },
+        { "nvim-lua/plenary.nvim" },
+      },
+      config = function()
+        local ok, chat = pcall(require, "CopilotChat")
+        if not ok then
+          vim.api.nvim_err_writeln("CopilotChat failed to load")
+          return
+        end
+
+        chat.setup({ debug = false })
+
+        if chat.toggle then
+          vim.keymap.set("n", "<leader>cc", chat.toggle, { desc = "Toggle Copilot Chat" })
+        end
+        if chat.explain then
+          vim.keymap.set("v", "<leader>ce", chat.explain, { desc = "Explain code with Copilot Chat" })
+        end
+        if chat.fix then
+          vim.keymap.set("v", "<leader>cf", chat.fix, { desc = "Fix code with Copilot Chat" })
+        end
+        if chat.docs then
+          vim.keymap.set("v", "<leader>cd", chat.docs, { desc = "Generate docs with Copilot Chat" })
+        end
+      end,
+    },
   })
 end
 
@@ -221,24 +250,5 @@ local function setup_run_commands()
     pattern = "*",
     callback = function()
       vim.cmd("startinsert")
-      vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true, silent = true })
-      vim.api.nvim_buf_set_keymap(0, "t", "<C-q>", "<C-\\><C-n>", { noremap = true, silent = true })
-    end,
-  })
-end
+      vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true
 
-local function setup_folds()
-  vim.o.foldmethod = "expr"
-  vim.o.foldexpr = "nvim_treesitter#foldexpr()"
-  vim.o.foldenable = true
-end
-
--- MAIN SETUP
-
-if bootstrap_lazy() then
-  setup_plugins()
-  setup_basic_settings()
-  setup_git_branch_protection()
-  setup_run_commands()
-  setup_folds()
-end
