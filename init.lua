@@ -253,9 +253,18 @@ end
 -- Folding
 local function setup_folds()
   vim.o.foldmethod = "expr"
-  vim.o.foldexpr = "nvim_treesitter#foldexpr()"
+  vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
   vim.o.foldenable = true
+
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "json", "python", "bash", "lua", "jsonc" },
+    callback = function()
+      vim.opt_local.foldmethod = "expr"
+      vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    end,
+  })
 end
+
 
 -- MAIN EXECUTION
 if bootstrap_lazy() then
