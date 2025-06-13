@@ -29,10 +29,8 @@ local function setup_plugins()
       "github/copilot.vim",
       config = function()
         vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
-        vim.api.nvim_set_keymap("i", "<C-g>", 'copilot#Toggle()', { expr = true, noremap = true, silent = true })
         vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
         vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
-        vim.api.nvim_set_keymap("n", "<C-c>", ":echo 'Chatbox not supported with copilot.vim plugin'<CR>", { noremap = true, silent = true })
       end,
     },
     {
@@ -110,6 +108,15 @@ local function setup_plugins()
             "Github Copilot commands:",
             "Ctrl-e    | Enable Copilot",
             "Ctrl-d    | Disable Copilot",
+            "CopilotChat        | lets you ask Copilot questions",
+            "CopilotChatExplain        | Copilot explains code",
+            "CopilotChatReview        | Copilot reviews code",
+            "CopilotChatFix        | Copilot fixes code",
+            "CopilotChatTests        | Copilot generates tests",
+            "CopilotChatRefactor        | Copilot refactors code",
+            "CopilotChatOptimize        | Copilot optimizes code",
+            "CopilotChatDocs        | Copilot generates documentation",
+            "CopilotChatCommit        | Copilot generates commit messages",
             "Tab       | Accept Copilot suggestion",
             "",
             "Additional:",
@@ -258,4 +265,5 @@ if bootstrap_lazy() then
   setup_run_commands()
   setup_folds()
 end
+
 
