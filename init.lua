@@ -147,7 +147,7 @@ local function setup_plugins()
       build = ":TSUpdate",
       config = function()
         require('nvim-treesitter.configs').setup({
-          ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css" },
+          ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css", "json", "jsonc" },
           highlight = { enable = true },
           indent = { enable = true },
         })
@@ -253,14 +253,19 @@ end
 -- Folding
 local function setup_folds()
   vim.o.foldmethod = "expr"
-  vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+  vim.o.foldexpr = "nvim_treesitter#foldexpr()"
   vim.o.foldenable = true
-
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = { "json", "python", "bash", "lua", "jsonc" },
-    callback = function()
-      vim.opt_local.foldmethod = "expr"
-      vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    function _G.custom_foldtext()
+        local line = vim.fn.getline(vim.v.foldstart)
+        local lines_count = vim.v.foldend - vim.v.foldstart + 1
+        return line .. " (" .. lines_count .. " lines)"
+    end
+    vim.api.nvim_create_autocmd({"BufReadPost", "BufWinEnter"}, {
+        pattern = { "*" },
+        callback = function()
+            vim.opt_local.foldmethod = "expr"
+            vim.opt_local.foldexpr = "nvim_treesitter#foldexpr()"
+            vim.opt_local.foldtext = "v:lua.custom_foldtext()"
     end,
   })
 end
