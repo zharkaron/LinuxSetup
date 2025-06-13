@@ -16,21 +16,16 @@ install_package() {
     fi
 }
 
-check_and_install_zsh() {
-    if command -v zsh >/dev/null 2>&1; then
-        echo "✅ Zsh is already installed."
-    else
-        echo "❌ Zsh is not installed. Installing now..."
-        install_package zsh
-    fi
-}
+check_and_install() {
+    CMD=$1          # command to check, e.g. 'zsh'
+    PKG=$2          # package name to install, e.g. 'zsh'
+    DISPLAY_NAME=$3 # friendly name to show in messages
 
-check_and_install_nvim() {
-    if command -v nvim >/dev/null 2>&1; then
-        echo "✅ Neovim is already installed."
+    if command -v "$CMD" >/dev/null 2>&1; then
+        echo "✅ $DISPLAY_NAME is already installed."
     else
-        echo "❌ Neovim is not installed. Installing now..."
-        install_package neovim
+        echo "❌ $DISPLAY_NAME is not installed. Installing now..."
+        install_package "$PKG"
     fi
 }
 
@@ -55,7 +50,7 @@ create_symlinks() {
     echo "✅ All symlinks created!"
 }
 
-# Run checks and installation
-check_and_install_zsh
-check_and_install_nvim
+# Run checks and installation for each tool
+check_and_install zsh zsh "Zsh"
+check_and_install nvim neovim "Neovim"
 create_symlinks
