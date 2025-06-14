@@ -52,6 +52,11 @@ local function setup_plugins()
       config = function()
         local api = require("nvim-tree.api")
         require("nvim-tree").setup({
+                    filters = {
+                        dotfiles = true,
+                        git_ignored = false,
+                    },
+                    git = { enable = true },
           git = { enable = true },
           actions = {
             use_system_clipboard = true,
@@ -253,7 +258,7 @@ end
 -- Folding
 local function setup_folds()
   vim.o.foldmethod = "expr"
-  vim.o.foldexpr = "nvim_treesitter#foldexpr()"
+  vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
   vim.o.foldenable = true
     function _G.custom_foldtext()
         local line = vim.fn.getline(vim.v.foldstart)
@@ -264,10 +269,16 @@ local function setup_folds()
         pattern = { "*" },
         callback = function()
             vim.opt_local.foldmethod = "expr"
-            vim.opt_local.foldexpr = "nvim_treesitter#foldexpr()"
+            vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
             vim.opt_local.foldtext = "v:lua.custom_foldtext()"
-    end,
-  })
+        end
+    })
+    vim.api.nvim_create_autocmd("FileType", {
+        pattern = "json",
+        callback = function()
+            vim.opt_local.foldlevel = 3
+        end
+    })
 end
 
 
