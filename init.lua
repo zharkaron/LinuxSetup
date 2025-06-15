@@ -1,4 +1,4 @@
--- init.lua
+
 
 -- Bootstrap lazy.nvim
 local function bootstrap_lazy()
@@ -42,8 +42,32 @@ local function setup_plugins()
       build = "make tiktoken",
       config = function()
         require("CopilotChat").setup({
-          debug = true,
-        })
+                    window = {
+                        width = 60,
+                        side = "right",
+                        border = "rounded",
+                        title = "Copilot Chat",
+                    },
+                    layout = {
+                        min_width = 30,
+                        max_width = 80,
+                    },
+                    Mappings = {
+                        close = {"<Esc>", "q"},
+                        submit_prompt = {"<C-CR>", "<CR>"},
+                        clear_prompt = {"<C-u>"},
+                    },
+                    auto_prompt = {
+                        enable = true,
+		},
+	})
+	vim.keymap.set("n", "<leader>cf", ":CopilotChatFix #buffer<CR>", { desc = "Copilot Chat Fix" })
+	vim.keymap.set("n", "<leader>ce", ":CopilotChatExplain #buffer<CR>", { desc = "Copilot Chat Explain" })
+	vim.keymap.set("n", "<leader>cr", ":CopilotChatReview #buffer<CR>", { desc = "Copilot Chat Review" })
+	vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
+					    -- Close the parentheses
+
+
       end,
     },
     {
@@ -80,7 +104,8 @@ local function setup_plugins()
           end,
         })
         vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
-
+        vim.keymap.set('n', '<Leader>r', ':NvimTreeRefresh<CR>', { noremap = true, silent = true })
+        vim.keymap.set('n', '<Leader>n', ':NvimTreeFindFile<CR>', { noremap = true, silent = true })
         vim.api.nvim_create_user_command("H", function()
           local buf = vim.api.nvim_create_buf(false, true)
           local help_lines = {
@@ -113,15 +138,11 @@ local function setup_plugins()
             "Github Copilot commands:",
             "Ctrl-e    | Enable Copilot",
             "Ctrl-d    | Disable Copilot",
-            "CopilotChat        | lets you ask Copilot questions",
-            "CopilotChatExplain        | Copilot explains code",
-            "CopilotChatReview        | Copilot reviews code",
-            "CopilotChatFix        | Copilot fixes code",
-            "CopilotChatTests        | Copilot generates tests",
-            "CopilotChatRefactor        | Copilot refactors code",
-            "CopilotChatOptimize        | Copilot optimizes code",
-            "CopilotChatDocs        | Copilot generates documentation",
-            "CopilotChatCommit        | Copilot generates commit messages",
+            "<Leader>cf | Fix current code with Copilot",
+            "<Leader>ce | Explain current code with Copilot",
+            "<Leader>cr | Review current code with Copilot",
+            "<Leader>cq | Quickfix current code with Copilot",
+            "<Leader>cc  | Open Copilot chat",
             "Tab       | Accept Copilot suggestion",
             "",
             "Additional:",
@@ -175,7 +196,6 @@ local function setup_basic_settings()
   vim.cmd('colorscheme desert')
 
   vim.api.nvim_set_keymap('n', '<F2>', ':set paste!<CR>', { noremap = true, silent = true })
-
   vim.api.nvim_set_keymap('n', '<C-h>', '<C-w>h', { noremap = true, silent = true })
   vim.api.nvim_set_keymap('n', '<C-j>', '<C-w>j', { noremap = true, silent = true })
   vim.api.nvim_set_keymap('n', '<C-k>', '<C-w>k', { noremap = true, silent = true })
@@ -290,5 +310,3 @@ if bootstrap_lazy() then
   setup_run_commands()
   setup_folds()
 end
-
-
