@@ -1,5 +1,3 @@
-
-
 -- Bootstrap lazy.nvim
 local function bootstrap_lazy()
   local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -65,9 +63,6 @@ local function setup_plugins()
 	vim.keymap.set("n", "<leader>ce", ":CopilotChatExplain #buffer<CR>", { desc = "Copilot Chat Explain" })
 	vim.keymap.set("n", "<leader>cr", ":CopilotChatReview #buffer<CR>", { desc = "Copilot Chat Review" })
 	vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
-					    -- Close the parentheses
-
-
       end,
     },
     {
@@ -105,6 +100,38 @@ local function setup_plugins()
         vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
         vim.keymap.set('n', '<Leader>r', ':NvimTreeRefresh<CR>', { noremap = true, silent = true })
         vim.keymap.set('n', '<Leader>n', ':NvimTreeFindFile<CR>', { noremap = true, silent = true })
+        vim.keymap.set('n', '<Leader>d', function()
+                local node = require("nvim-tree.api").tree.get_node_under_cursor()
+                local dir = node and node.absolute_path or vim.fn.getcwd()
+                vim.cmd('cd ' .. dir)
+                end, { noremap = true, silent = true, desc = "Change terminal to nvim-tree node" })
+        vim.keymap.set('n', '<Leader>x', function()
+            local node = require("nvim-tree.api").tree.get_node_under_cursor()
+            local file = node and node.absolute_path or vim.fn.expand("%:p")
+            if vim.fn.filereadable(file) == 1 then
+                local ext = vim.fn.fnamemodify(file, ":e")
+                local cmd
+                if ext == "py" then
+                    cmd = "python " .. vim.fn.shellescape(file)
+                elseif ext == "sh" or ext == "bash" then
+                    cmd = "bash " .. vim.fn.shellescape(file)
+                elseif ext == "zsh" then
+                    cmd = "zsh " .. vim.fn.shellescape(file)
+                elseif ext == "lua" then
+                    cmd = "lua " .. vim.fn.shellescape(file)
+                elseif ext == "js" then
+                    cmd = "node " .. vim.fn.shellescape(file)
+                else
+                    vim.api.nvim_echo({ { "Unsupported filetype: " .. ext, "ErrorMsg" } }, false, {})
+                    return
+                end
+                vim.cmd("wincmd p")
+                vim.cmd("belowright split | terminal " .. cmd)
+                vim.cmd("resize 15")
+            else
+                vim.api.nvim_echo({ { "No file selected to run.", "ErrorMsg" } }, false, {})
+            end
+        end, { noremap = true, silent = true, desc = "Run file under cursor in nvim-tree" })
         vim.api.nvim_create_user_command("H", function()
           local buf = vim.api.nvim_create_buf(false, true)
           local help_lines = {
@@ -141,7 +168,7 @@ local function setup_plugins()
             "<Leader>ce | Explain current code with Copilot",
             "<Leader>cr | Review current code with Copilot",
             "<Leader>cq | Quickfix current code with Copilot",
-            "<Leader>cc  | Open Copilot chat",
+            "<Leader>c  | Open Copilot chat",
             "Tab       | Accept Copilot suggestion",
             "",
             "Additional:",
@@ -203,25 +230,39 @@ end
 
 -- Git branch protection
 local function setup_git_branch_protection()
-  local function check_git_branch()
+  local function get_git_branch()
     local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null")
-    if not handle then return end
-    local branch = handle:read("*l")
-    handle:close()
-    if branch == "main" then
-      vim.api.nvim_echo({
-        { "You are on the 'main' branch! Please switch to another branch before editing. Press Enter to quit.", "WarningMsg" }
-      }, false, {})
-      vim.fn.input("")
-      vim.cmd("cq")
+    if handle then
+      local branch = handle:read("*l")
+      handle:close()
+      return branch
     end
+    return nil
+  end
+
+  local function prompt_and_switch_branch()
+    vim.schedule(function()
+      vim.ui.input({ prompt = "You are on 'main'. Enter branch to switch to: " }, function(branch)
+        if branch and #branch > 0 then
+          vim.fn.jobstart({ "git", "checkout", branch }, {
+            on_exit = function(_, code)
+              if code == 0 then
+                vim.notify("Switched to branch '" .. branch .. "'.", vim.log.levels.INFO)
+              else
+                vim.notify("Failed to switch to branch '" .. branch .. "'.", vim.log.levels.ERROR)
+              end
+            end,
+          })
+        end
+      end)
+    end)
   end
 
   vim.api.nvim_create_autocmd({ "BufReadPost", "BufWinEnter" }, {
     pattern = "*",
     callback = function()
-      if vim.fn.finddir(".git", ".;") ~= "" then
-        check_git_branch()
+      if vim.fn.finddir(".git", ".;") ~= "" and get_git_branch() == "main" then
+        prompt_and_switch_branch()
       end
     end,
   })
@@ -309,3 +350,5 @@ if bootstrap_lazy() then
   setup_run_commands()
   setup_folds()
 end
+
+
