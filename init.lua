@@ -77,10 +77,9 @@ local function setup_plugins()
         local api = require("nvim-tree.api")
         require("nvim-tree").setup({
                     filters = {
-                        dotfiles = true,
+                        dotfiles = false,
                         git_ignored = false,
                     },
-                    git = { enable = true },
           git = { enable = true },
           actions = {
             use_system_clipboard = true,
