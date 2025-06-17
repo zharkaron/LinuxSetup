@@ -205,7 +205,23 @@ local function setup_plugins()
         })
       end,
     },
-  })
+    {
+            "mfussenegger/nvim-lint",
+            config = function()
+                require("lint").linters_by_ft = {
+                    json = { "jq" },
+                    sh = { "shellcheck" },
+                    bash = { "shellcheck" },
+                    lua = { "luacheck" },
+                }
+                vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+                    callback = function()
+                        require("lint").try_lint()
+                    end,
+                })
+            end,
+        },
+    })
 end
 
 -- Basic settings
@@ -230,21 +246,34 @@ end
 
 -- Git branch protection
 local function setup_git_branch_protection()
-  local function get_git_branch()
-    local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null")
-    if handle then
-      local branch = handle:read("*l")
-      handle:close()
-      return branch
+  local protected_branches = { "main", "master", "develop" }
+
+  local function is_protected_branch(branch)
+    for _, b in ipairs(protected_branches) do
+      if b == branch then
+        return true
+      end
     end
-    return nil
+    return false
   end
 
   local function prompt_and_switch_branch()
     vim.schedule(function()
-      vim.ui.input({ prompt = "You are on 'main'. Enter branch to switch to: " }, function(branch)
+      vim.ui.input({ prompt = "You are on a protected branch. Enter branch to switch to: " }, function(branch)
         if branch and #branch > 0 then
-          vim.fn.jobstart({ "git", "checkout", branch }, {
+          -- Check if branch exists
+          local handle = io.popen('git branch --list ' .. branch)
+          local result = handle:read("*a")
+          handle:close()
+          local cmd
+          if result and #result > 0 then
+            -- Branch exists, just checkout
+            cmd = { "git", "checkout", branch }
+          else
+            -- Branch does not exist, create and checkout
+            cmd = { "git", "checkout", "-b", branch }
+          end
+          vim.fn.jobstart(cmd, {
             on_exit = function(_, code)
               if code == 0 then
                 vim.notify("Switched to branch '" .. branch .. "'.", vim.log.levels.INFO)
@@ -258,11 +287,15 @@ local function setup_git_branch_protection()
     end)
   end
 
-  vim.api.nvim_create_autocmd({ "BufReadPost", "BufWinEnter" }, {
+  vim.api.nvim_create_autocmd("BufWritePre", {
     pattern = "*",
     callback = function()
-      if vim.fn.finddir(".git", ".;") ~= "" and get_git_branch() == "main" then
+      local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null")
+      local branch = handle:read("*l")
+      handle:close()
+      if branch and is_protected_branch(branch) then
         prompt_and_switch_branch()
+        error("You are on a protected branch (" .. branch .. "). Please switch branches before writing.")
       end
     end,
   })
