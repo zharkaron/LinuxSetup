@@ -20,16 +20,118 @@ local function bootstrap_lazy()
   return true
 end
 
--- Plugin Setup
+-- Copilot Config
+local function copilot_config()
+  vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
+  vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
+  vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
+end
+
+-- Copilot Chat Config
+local function copilotchat_config()
+  require("CopilotChat").setup({
+    window = {
+      width = 60,
+      side = "right",
+      border = "rounded",
+      title = "Copilot Chat",
+    },
+    layout = {
+      min_width = 30,
+      max_width = 80,
+    },
+    Mappings = {
+      close = {"<Esc>", "q"},
+      submit_prompt = {"<C-CR>", "<CR>"},
+      clear_prompt = {"<C-u>"},
+    },
+    auto_prompt = {
+      enable = true,
+    },
+  })
+  vim.keymap.set("n", "<leader>cf", ":CopilotChatFix #buffer<CR>", { desc = "Copilot Chat Fix" })
+  vim.keymap.set("n", "<leader>ce", ":CopilotChatExplain #buffer<CR>", { desc = "Copilot Chat Explain" })
+  vim.keymap.set("n", "<leader>cr", ":CopilotChatReview #buffer<CR>", { desc = "Copilot Chat Review" })
+  vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
+end
+
+-- Nvim Tree Config
+local function nvim_tree_config()
+  local api = require("nvim-tree.api")
+  require("nvim-tree").setup({
+    filters = {
+      dotfiles = false,
+      git_ignored = false,
+    },
+    git = { enable = true },
+    actions = {
+      use_system_clipboard = true,
+      change_dir = { enable = true, global = false },
+      open_file = { quit_on_open = false },
+    },
+    renderer = { highlight_git = true },
+    view = {
+      side = "left",
+      width = 30,
+    },
+    on_attach = function(bufnr)
+      api.config.mappings.default_on_attach(bufnr)
+      local opts = function(desc)
+        return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+      end
+      vim.keymap.set("n", "<CR>", api.node.open.edit, opts("Open"))
+      vim.keymap.set("n", "o", api.node.open.edit, opts("Open"))
+      vim.keymap.set("n", "v", api.node.open.vertical, opts("Vertical Split"))
+      vim.keymap.set("n", "h", api.node.open.horizontal, opts("Horizontal Split"))
+    end,
+  })
+  vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
+  vim.keymap.set('n', '<Leader>r', ':NvimTreeRefresh<CR>', { noremap = true, silent = true })
+  vim.keymap.set('n', '<Leader>n', ':NvimTreeFindFile<CR>', { noremap = true, silent = true })
+end
+
+-- Treesitter Config
+local function treesitter_config()
+  require('nvim-treesitter.configs').setup({
+    ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css", "json", "jsonc" },
+    highlight = { enable = true },
+    indent = { enable = true },
+  })
+end
+
+-- Linting Config
+local function linting_config()
+  require("lint").linters_by_ft = {
+    json = { "jq" },
+    sh = { "shellcheck" },
+    bash = { "shellcheck" },
+    lua = { "luacheck" },
+  }
+  vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+    callback = function()
+      require("lint").try_lint()
+    end,
+  })
+end
+
+-- Help window for nvim-tree and keybindings
+local function setup_help_window()
+  vim.api.nvim_create_user_command("H", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+local help_lines = get_help_lines()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, help_lines)
+    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+    vim.api.nvim_buf_set_option(buf, "filetype", "help")
+    vim.api.nvim_open_win(buf, true, { relative = "editor", width = 70, height = #help_lines, row = 5, col = 10 })
+  end, {})
+end
+
+-- Main plugin setup
 local function setup_plugins()
   require("lazy").setup({
     {
       "github/copilot.vim",
-      config = function()
-        vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
-        vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
-        vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
-      end,
+      config = copilot_config,
     },
     {
       "CopilotC-Nvim/CopilotChat.nvim",
@@ -38,190 +140,23 @@ local function setup_plugins()
         "nvim-lua/plenary.nvim"
       },
       build = "make tiktoken",
-      config = function()
-        require("CopilotChat").setup({
-                    window = {
-                        width = 60,
-                        side = "right",
-                        border = "rounded",
-                        title = "Copilot Chat",
-                    },
-                    layout = {
-                        min_width = 30,
-                        max_width = 80,
-                    },
-                    Mappings = {
-                        close = {"<Esc>", "q"},
-                        submit_prompt = {"<C-CR>", "<CR>"},
-                        clear_prompt = {"<C-u>"},
-                    },
-                    auto_prompt = {
-                        enable = true,
-		},
-	})
-	vim.keymap.set("n", "<leader>cf", ":CopilotChatFix #buffer<CR>", { desc = "Copilot Chat Fix" })
-	vim.keymap.set("n", "<leader>ce", ":CopilotChatExplain #buffer<CR>", { desc = "Copilot Chat Explain" })
-	vim.keymap.set("n", "<leader>cr", ":CopilotChatReview #buffer<CR>", { desc = "Copilot Chat Review" })
-	vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
-      end,
+      config = copilotchat_config,
     },
     {
       "nvim-tree/nvim-tree.lua",
       dependencies = { "nvim-tree/nvim-web-devicons" },
-      config = function()
-        local api = require("nvim-tree.api")
-        require("nvim-tree").setup({
-                    filters = {
-                        dotfiles = false,
-                        git_ignored = false,
-                    },
-          git = { enable = true },
-          actions = {
-            use_system_clipboard = true,
-            change_dir = { enable = true, global = false },
-            open_file = { quit_on_open = false },
-          },
-          renderer = { highlight_git = true },
-          view = {
-            side = "left",
-            width = 30,
-          },
-          on_attach = function(bufnr)
-            api.config.mappings.default_on_attach(bufnr)
-            local opts = function(desc)
-              return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
-            end
-            vim.keymap.set("n", "<CR>", api.node.open.edit, opts("Open"))
-            vim.keymap.set("n", "o", api.node.open.edit, opts("Open"))
-            vim.keymap.set("n", "v", api.node.open.vertical, opts("Vertical Split"))
-            vim.keymap.set("n", "h", api.node.open.horizontal, opts("Horizontal Split"))
-          end,
-        })
-        vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
-        vim.keymap.set('n', '<Leader>r', ':NvimTreeRefresh<CR>', { noremap = true, silent = true })
-        vim.keymap.set('n', '<Leader>n', ':NvimTreeFindFile<CR>', { noremap = true, silent = true })
-        vim.keymap.set('n', '<Leader>d', function()
-                local node = require("nvim-tree.api").tree.get_node_under_cursor()
-                local dir = node and node.absolute_path or vim.fn.getcwd()
-                vim.cmd('cd ' .. dir)
-                end, { noremap = true, silent = true, desc = "Change terminal to nvim-tree node" })
-        vim.keymap.set('n', '<Leader>x', function()
-            local node = require("nvim-tree.api").tree.get_node_under_cursor()
-            local file = node and node.absolute_path or vim.fn.expand("%:p")
-            if vim.fn.filereadable(file) == 1 then
-                local ext = vim.fn.fnamemodify(file, ":e")
-                local cmd
-                if ext == "py" then
-                    cmd = "python " .. vim.fn.shellescape(file)
-                elseif ext == "sh" or ext == "bash" then
-                    cmd = "bash " .. vim.fn.shellescape(file)
-                elseif ext == "zsh" then
-                    cmd = "zsh " .. vim.fn.shellescape(file)
-                elseif ext == "lua" then
-                    cmd = "lua " .. vim.fn.shellescape(file)
-                elseif ext == "js" then
-                    cmd = "node " .. vim.fn.shellescape(file)
-                else
-                    vim.api.nvim_echo({ { "Unsupported filetype: " .. ext, "ErrorMsg" } }, false, {})
-                    return
-                end
-                vim.cmd("wincmd p")
-                vim.cmd("belowright split | terminal " .. cmd)
-                vim.cmd("resize 15")
-            else
-                vim.api.nvim_echo({ { "No file selected to run.", "ErrorMsg" } }, false, {})
-            end
-        end, { noremap = true, silent = true, desc = "Run file under cursor in nvim-tree" })
-        vim.api.nvim_create_user_command("H", function()
-          local buf = vim.api.nvim_create_buf(false, true)
-          local help_lines = {
-            "*NVIM-TREE-HELP*",
-            "===============================================================================",
-            "nvim-tree keybindings and settings",
-            "",
-            "Key       | Action",
-            "----------|-----------------------------------------",
-            "<Leader>e | Toggle nvim-tree sidebar",
-            "<CR> / o  | Open file or folder",
-            "Arrow Up  | Move selection up",
-            "Arrow Down| Move selection down",
-            "Arrow Left| Collapse folder or go up a directory",
-            "Arrow Right| Open folder or file",
-            "a         | Create new file/folder",
-            "d         | Delete file/folder",
-            "r         | Rename file/folder",
-            "c         | Copy file/folder",
-            "p         | Paste file/folder",
-            "q         | Close sidebar",
-            "",
-            "Settings:",
-            "- Sidebar on left side",
-            "- Sidebar width 30 columns",
-            "- Git status enabled (file highlights)",
-            "- Clipboard enabled for copy/paste",
-            "- Sidebar stays open when opening files",
-            "",
-            "Github Copilot commands:",
-            "Ctrl-e    | Enable Copilot",
-            "Ctrl-d    | Disable Copilot",
-            "<Leader>cf | Fix current code with Copilot",
-            "<Leader>ce | Explain current code with Copilot",
-            "<Leader>cr | Review current code with Copilot",
-            "<Leader>cq | Quickfix current code with Copilot",
-            "<Leader>c  | Open Copilot chat",
-            "Tab       | Accept Copilot suggestion",
-            "",
-            "Additional:",
-            "- :X to run current file in split terminal",
-            "- :C to open terminal in split",
-            "- Ctrl-q to exit terminal mode",
-            "- Window navigation with Ctrl+h/j/k/l",
-            "",
-            "Folding commands:",
-            "zM         | Close all folds (fold everything)",
-            "zR         | Open all folds (unfold everything)",
-            "za         | Toggle fold under the cursor",
-            "zc         | Close fold under cursor",
-            "zo         | Open fold under cursor",
-            "zj         | Jump to the start of next fold",
-            "zk         | Jump to the start of previous fold",
-            "===============================================================================",
-          }
-          vim.api.nvim_buf_set_lines(buf, 0, -1, false, help_lines)
-          vim.api.nvim_buf_set_option(buf, "modifiable", false)
-          vim.api.nvim_buf_set_option(buf, "filetype", "help")
-          vim.api.nvim_open_win(buf, true, { relative = "editor", width = 70, height = #help_lines, row = 5, col = 10 })
-        end, {})
-      end,
+      config = nvim_tree_config,
     },
     {
       "nvim-treesitter/nvim-treesitter",
       build = ":TSUpdate",
-      config = function()
-        require('nvim-treesitter.configs').setup({
-          ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css", "json", "jsonc" },
-          highlight = { enable = true },
-          indent = { enable = true },
-        })
-      end,
+      config = treesitter_config,
     },
     {
-            "mfussenegger/nvim-lint",
-            config = function()
-                require("lint").linters_by_ft = {
-                    json = { "jq" },
-                    sh = { "shellcheck" },
-                    bash = { "shellcheck" },
-                    lua = { "luacheck" },
-                }
-                vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
-                    callback = function()
-                        require("lint").try_lint()
-                    end,
-                })
-            end,
-        },
-    })
+      "mfussenegger/nvim-lint",
+      config = linting_config,
+    },
+  })
 end
 
 -- Basic settings
@@ -229,8 +164,8 @@ local function setup_basic_settings()
   vim.opt.number = true
   vim.opt.relativenumber = true
   vim.opt.expandtab = true
-  vim.opt.shiftwidth = 4
-  vim.opt.tabstop = 4
+  vim.opt.shiftwidth = 2
+  vim.opt.tabstop = 2
   vim.opt.smartindent = true
   vim.cmd('syntax on')
 
@@ -343,7 +278,7 @@ local function setup_run_commands()
     callback = function()
       vim.cmd("startinsert")
       vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true, silent = true })
-      vim.api.nvim_buf_set_keymap(0, "t", "<C-q>", "<C-\\><C-n>", { noremap = true, silent = true })
+vim.api.nvim_buf_set_keymap(0, "t", "<C-q>", "<C-\\><C-n>", { noremap = true, silent = true })
     end,
   })
 end
@@ -352,7 +287,7 @@ end
 local function setup_folds()
   vim.o.foldmethod = "expr"
   vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-  vim.o.foldenable = true
+vim.o.foldenable = true
     function _G.custom_foldtext()
         local line = vim.fn.getline(vim.v.foldstart)
         local lines_count = vim.v.foldend - vim.v.foldstart + 1
@@ -372,6 +307,7 @@ local function setup_folds()
             vim.opt_local.foldlevel = 3
         end
     })
+  setup_help_window()
 end
 
 
