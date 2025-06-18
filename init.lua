@@ -114,6 +114,43 @@ local function linting_config()
   })
 end
 
+-- Help table for nvim-tree and keybindings
+local function get_help_lines()
+  return {
+    "Nvim-Tree Help",
+    "---------------------",
+    "Keybindings:",
+    "  <CR> or o - Open file",
+    "  v - Open file in vertical split",
+    "  h - Open file in horizontal split",
+    "  <Leader>e - Toggle Nvim-Tree",
+    "  <Leader>r - Refresh Nvim-Tree",
+    "  <Leader>n - Find current file in Nvim-Tree",
+    "  a - Create a new file or directory",
+    "  d - Delete file or directory",
+    "  r - Rename file or directory",
+    "  c - Copy file or directory",
+    "  p - Paste file or directory",
+    "",
+    "Copilot Chat Commands:",
+    "  <leader>cf - Fix code with Copilot Chat",
+    "  <leader>ce - Explain code with Copilot Chat",
+    "  <leader>cr - Review code with Copilot Chat",
+    "  <leader>c - Open Copilot Chat",
+    "Folding:",
+    " 'zo' - Open fold",
+    " 'zc' - Close fold",
+    " 'za' - Toggle fold",
+    " 'zR' - Open all folds",
+    " 'zM' - Close all folds",
+    "",
+    "Run Commands:",
+    "  :X - Run current file in terminal",
+    "  :C - Open custom terminal",
+    "",
+  }
+end
+
 -- Help window for nvim-tree and keybindings
 local function setup_help_window()
   vim.api.nvim_create_user_command("H", function()
@@ -310,7 +347,6 @@ vim.o.foldenable = true
   setup_help_window()
 end
 
-
 -- MAIN EXECUTION
 if bootstrap_lazy() then
   setup_plugins()
@@ -319,5 +355,4 @@ if bootstrap_lazy() then
   setup_run_commands()
   setup_folds()
 end
-
 
