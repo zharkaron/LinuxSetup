@@ -254,7 +254,6 @@ local function setup_basic_settings()
 end
 
 -- Git branch protection
--- Git branch protection
 local function setup_git_branch_protection()
   local protected_branches = { "main", "master", "develop" }
 
@@ -436,6 +435,5 @@ if bootstrap_lazy() then
   setup_folds()
   setup_custom_keys()
 end
-
 
 
