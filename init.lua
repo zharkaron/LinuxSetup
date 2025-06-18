@@ -32,7 +32,7 @@ local function copilotchat_config()
   require("CopilotChat").setup({
     window = {
       width = 60,
-      side = "right",
+      position = "right",
       border = "rounded",
       title = "Copilot Chat",
     },
