@@ -55,6 +55,47 @@ local function copilotchat_config()
   vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
 end
 
+-- Run commands
+local function run_current_file()
+  local ft, file
+  -- Try to get file from nvim-tree if it's focused
+  local ok, api = pcall(require, "nvim-tree.api")
+  if ok and api.tree.is_tree_buf() then
+    local node = api.tree.get_node_under_cursor()
+    if node and node.absolute_path then
+      file = node.absolute_path
+      ft = vim.filetype.match({ filename = file }) or vim.fn.fnamemodify(file, ":e")
+    end
+  end
+  -- Fallback to current buffer
+  if not file then
+    ft = vim.bo.filetype
+    file = vim.fn.expand("%:p")
+  end
+
+  local dir = vim.fn.fnamemodify(file, ":h")
+  local cmd = ""
+  local run_as_root = vim.fn.input("Run as root? (y/n): "):lower() == "y"
+  local sudo = run_as_root and "sudo " or ""
+
+  if ft == "python" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && " .. sudo .. "python " .. vim.fn.shellescape(file)
+  elseif ft == "bash" or ft == "sh" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && " .. sudo .. "bash " .. vim.fn.shellescape(file)
+  elseif ft == "zsh" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && " .. sudo .. "zsh " .. vim.fn.shellescape(file)
+  elseif ft == "lua" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && " .. sudo .. "lua " .. vim.fn.shellescape(file)
+  elseif ft == "javascript" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && " .. sudo .. "node " .. vim.fn.shellescape(file)
+  else
+    vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
+    return
+  end
+  -- specify the window to be 15 lines tall and open in a window below the all other windows
+  vim.cmd("botright 15split | terminal " .. cmd)
+end
+
 -- Nvim Tree Config
 local function nvim_tree_config()
   local api = require("nvim-tree.api")
@@ -79,7 +120,10 @@ local function nvim_tree_config()
       local opts = function(desc)
         return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
       end
-      vim.keymap.set("n", "<CR>", api.node.open.edit, opts("Open"))
+      vim.keymap.set("n", "<leader>x", function()
+        api.node.open.edit()
+        run_current_file()
+      end, opts("Open and Run Current File"))
       vim.keymap.set("n", "o", api.node.open.edit, opts("Open"))
       vim.keymap.set("n", "v", api.node.open.vertical, opts("Vertical Split"))
       vim.keymap.set("n", "h", api.node.open.horizontal, opts("Horizontal Split"))
@@ -155,7 +199,7 @@ end
 local function setup_help_window()
   vim.api.nvim_create_user_command("H", function()
     local buf = vim.api.nvim_create_buf(false, true)
-local help_lines = get_help_lines()
+    local help_lines = get_help_lines()
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, help_lines)
     vim.api.nvim_buf_set_option(buf, "modifiable", false)
     vim.api.nvim_buf_set_option(buf, "filetype", "help")
@@ -208,12 +252,6 @@ local function setup_basic_settings()
 
   vim.opt.termguicolors = true
   vim.cmd('colorscheme desert')
-
-  vim.api.nvim_set_keymap('n', '<F2>', ':set paste!<CR>', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<C-h>', '<C-w>h', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<C-j>', '<C-w>j', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<C-k>', '<C-w>k', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<C-l>', '<C-w>l', { noremap = true, silent = true })
 end
 
 -- Git branch protection
@@ -274,77 +312,109 @@ local function setup_git_branch_protection()
 end
 
 -- Run commands
-local function setup_run_commands()
-  local function run_current_file()
-    local ft = vim.bo.filetype
-    local file = vim.fn.expand("%:p")
+local function run_current_file()
+  local ft, file
+  -- Try to get file from nvim-tree if it's focused
+  local ok, api = pcall(require, "nvim-tree.api")
+  if ok and api.tree.is_tree_buf() then
+    local node = api.tree.get_node_under_cursor()
+    if node and node.absolute_path then
+      file = node.absolute_path
+      ft = vim.filetype.match({ filename = file }) or vim.fn.fnamemodify(file, ":e")
+    end
+  end
+  -- Fallback to current buffer
+  if not file then
+    ft = vim.bo.filetype
+    file = vim.fn.expand("%:p")
+  end
 
-    if ft == "python" then
-      if not os.getenv("VIRTUAL_ENV") then
-        vim.api.nvim_echo({
-          { "Python script detected. Please activate a virtual environment before running.", "WarningMsg" }
-        }, false, {})
-        return
-      end
-      vim.cmd("belowright split | terminal python " .. vim.fn.shellescape(file))
-    elseif ft == "bash" or ft == "sh" then
-      vim.cmd("belowright split | terminal bash " .. vim.fn.shellescape(file))
-    elseif ft == "zsh" then
-      vim.cmd("belowright split | terminal zsh " .. vim.fn.shellescape(file))
-    elseif ft == "lua" then
-      vim.cmd("belowright split | terminal lua " .. vim.fn.shellescape(file))
-    elseif ft == "javascript" then
-      vim.cmd("belowright split | terminal node " .. vim.fn.shellescape(file))
-    else
-      vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
+  local dir = vim.fn.fnamemodify(file, ":h")
+  local cmd
+  if ft == "python" then
+    if not os.getenv("VIRTUAL_ENV") then
+      vim.api.nvim_echo({
+        { "Python script detected. Please activate a virtual environment before running.", "WarningMsg" }
+      }, false, {})
       return
     end
-    vim.cmd("resize 15")
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && python " .. vim.fn.shellescape(file)
+  elseif ft == "bash" or ft == "sh" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && bash " .. vim.fn.shellescape(file)
+  elseif ft == "zsh" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && zsh " .. vim.fn.shellescape(file)
+  elseif ft == "lua" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && lua " .. vim.fn.shellescape(file)
+  elseif ft == "javascript" then
+    cmd = "cd " .. vim.fn.shellescape(dir) .. " && node " .. vim.fn.shellescape(file)
+  else
+    vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
+    return
   end
-
-  local function open_custom_terminal()
-    vim.cmd("belowright split | terminal")
-    vim.cmd("resize 15")
-  end
-
-  vim.api.nvim_create_user_command("X", run_current_file, {})
-  vim.api.nvim_create_user_command("C", open_custom_terminal, {})
-
-  vim.api.nvim_create_autocmd("TermOpen", {
-    pattern = "*",
-    callback = function()
-      vim.cmd("startinsert")
-      vim.api.nvim_buf_set_keymap(0, "t", "<Esc>", "<C-\\><C-n>", { noremap = true, silent = true })
-vim.api.nvim_buf_set_keymap(0, "t", "<C-q>", "<C-\\><C-n>", { noremap = true, silent = true })
-    end,
-  })
+  vim.cmd("tabnew | terminal " .. cmd)
 end
 
 -- Folding
 local function setup_folds()
   vim.o.foldmethod = "expr"
   vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-vim.o.foldenable = true
-    function _G.custom_foldtext()
-        local line = vim.fn.getline(vim.v.foldstart)
-        local lines_count = vim.v.foldend - vim.v.foldstart + 1
-        return line .. " (" .. lines_count .. " lines)"
-    end
-    vim.api.nvim_create_autocmd({"BufReadPost", "BufWinEnter"}, {
-        pattern = { "*" },
-        callback = function()
-            vim.opt_local.foldmethod = "expr"
-            vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-            vim.opt_local.foldtext = "v:lua.custom_foldtext()"
-        end
-    })
-    vim.api.nvim_create_autocmd("FileType", {
-        pattern = "json",
-        callback = function()
-            vim.opt_local.foldlevel = 3
-        end
-    })
+  vim.o.foldenable = true
+  function _G.custom_foldtext()
+      local line = vim.fn.getline(vim.v.foldstart)
+      local lines_count = vim.v.foldend - vim.v.foldstart + 1
+      return line .. " (" .. lines_count .. " lines)"
+  end
+  vim.api.nvim_create_autocmd({"BufReadPost", "BufWinEnter"}, {
+      pattern = { "*" },
+      callback = function()
+          vim.opt_local.foldmethod = "expr"
+          vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+          vim.opt_local.foldtext = "v:lua.custom_foldtext()"
+      end
+  })
+  vim.api.nvim_create_autocmd("FileType", {
+      pattern = "json",
+      callback = function()
+          vim.opt_local.foldlevel = 3
+      end
+  })
   setup_help_window()
+end
+
+-- Open terminal in home or hovered directory
+local function open_custom_terminal()
+  local dir
+  local ok, api = pcall(require, "nvim-tree.api")
+  if ok and api.tree.is_tree_buf() then
+    local node = api.tree.get_node_under_cursor()
+    if node and node.absolute_path then
+      dir = vim.fn.fnamemodify(node.absolute_path, ":h")
+    end
+  end
+  if not dir then
+    dir = vim.fn.expand("~")
+  end
+  vim.cmd("botright 15split | terminal zsh -c 'cd " .. vim.fn.shellescape(dir) .. " && clear && exec zsh'")
+end
+
+-- Custom keybindings and commands
+local function setup_custom_keys()
+  -- Custom terminal command and keymap
+  vim.api.nvim_create_user_command("C", open_custom_terminal, {})
+  vim.api.nvim_set_keymap('n', '<leader>C', ':lua open_custom_terminal()<CR>', { noremap = true, silent = true })
+
+  -- Window navigation
+  vim.api.nvim_set_keymap('n', '<C-h>', '<C-w>h', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<C-j>', '<C-w>j', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<C-k>', '<C-w>k', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<C-l>', '<C-w>l', { noremap = true, silent = true })
+
+  -- Terminal mode navigation
+  vim.api.nvim_set_keymap('t', '<Esc>', [[<C-\><C-n>]], { noremap = true })
+  vim.api.nvim_set_keymap('t', '<C-h>', [[<C-\><C-n><C-w>h]], { noremap = true })
+  vim.api.nvim_set_keymap('t', '<C-j>', [[<C-\><C-n><C-w>j]], { noremap = true })
+  vim.api.nvim_set_keymap('t', '<C-k>', [[<C-\><C-n><C-w>k]], { noremap = true })
+  vim.api.nvim_set_keymap('t', '<C-l>', [[<C-\><C-n><C-w>l]], { noremap = true })
 end
 
 -- MAIN EXECUTION
@@ -352,7 +422,8 @@ if bootstrap_lazy() then
   setup_plugins()
   setup_basic_settings()
   setup_git_branch_protection()
-  setup_run_commands()
+  run_current_file()
   setup_folds()
+  setup_custom_keys()
 end
 
