@@ -234,8 +234,8 @@ local function setup_git_branch_protection()
       vim.ui.input({ prompt = "You are on a protected branch. Enter branch to switch to: " }, function(branch)
         if branch and #branch > 0 then
           -- Check if branch exists
-          local handle = io.popen('git branch --list ' .. branch)
-          local result = handle:read("*a")
+          local handle = io.popen("git -C " .. vim.fn.expand("%:p:h") .. " rev-parse --abbrev-ref HEAD 2>/dev/null")
+          local result = handle:read("*l")
           handle:close()
           local cmd
           if result and #result > 0 then
