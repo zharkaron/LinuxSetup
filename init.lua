@@ -92,7 +92,6 @@ local function run_current_file()
     vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
     return
   end
-  -- specify the window to be 15 lines tall and open in a window below the all other windows
   vim.cmd("botright 15split | terminal " .. cmd)
 end
 
@@ -255,6 +254,7 @@ local function setup_basic_settings()
 end
 
 -- Git branch protection
+-- Git branch protection
 local function setup_git_branch_protection()
   local protected_branches = { "main", "master", "develop" }
 
@@ -267,19 +267,19 @@ local function setup_git_branch_protection()
     return false
   end
 
-  local function prompt_and_switch_branch()
+  local function prompt_and_switch_branch(git_root)
     vim.schedule(function()
       vim.ui.input({ prompt = "You are on a protected branch. Enter branch to switch to: " }, function(branch)
         if branch and #branch > 0 then
           -- Check if branch exists
-          local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
           if not git_root or git_root == "" then
             vim.notify("Not a git repository.", vim.log.levels.ERROR)
             return
           end
           local branches = vim.fn.systemlist("git -C " .. git_root .. " branch --list " .. branch)
           local cmd
-          if branches and #branches > 0 and branches[1] ~= "" then
+          branch = vim.trim(branch)
+          if branches and #branches > 0 and string.match(branches[1], "%s*" .. branch .. "%s*$") then
             -- Branch exists, just checkout
             cmd = { "git", "-C", git_root, "checkout", branch }
           else
@@ -310,8 +310,12 @@ local function setup_git_branch_protection()
       end
       local branch = vim.fn.systemlist("git -C " .. git_root .. " rev-parse --abbrev-ref HEAD")[1]
       if branch and is_protected_branch(branch) then
-        prompt_and_switch_branch()
-        error("You are on a protected branch (" .. branch .. "). Please switch branches before writing.")
+        prompt_and_switch_branch(git_root)
+        vim.notify(
+          "You are on a protected branch (" .. branch .. "). Please switch branches before writing.",
+          vim.log.levels.WARN
+        )
+        return false
       end
     end,
   })
@@ -421,6 +425,7 @@ local function setup_custom_keys()
   vim.api.nvim_set_keymap('t', '<C-j>', [[<C-\><C-n><C-w>j]], { noremap = true })
   vim.api.nvim_set_keymap('t', '<C-k>', [[<C-\><C-n><C-w>k]], { noremap = true })
   vim.api.nvim_set_keymap('t', '<C-l>', [[<C-\><C-n><C-w>l]], { noremap = true })
+  _G.run_current_file = run_current_file
 end
 
 -- MAIN EXECUTION
@@ -428,8 +433,9 @@ if bootstrap_lazy() then
   setup_plugins()
   setup_basic_settings()
   setup_git_branch_protection()
-  run_current_file()
   setup_folds()
   setup_custom_keys()
 end
+
+
 
