@@ -272,16 +272,19 @@ local function setup_git_branch_protection()
       vim.ui.input({ prompt = "You are on a protected branch. Enter branch to switch to: " }, function(branch)
         if branch and #branch > 0 then
           -- Check if branch exists
-          local handle = io.popen("git -C " .. vim.fn.expand("%:p:h") .. " rev-parse --abbrev-ref HEAD 2>/dev/null")
-          local result = handle:read("*l")
-          handle:close()
+          local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+          if not git_root or git_root == "" then
+            vim.notify("Not a git repository.", vim.log.levels.ERROR)
+            return
+          end
+          local branches = vim.fn.systemlist("git -C " .. git_root .. " branch --list " .. branch)
           local cmd
-          if result and #result > 0 then
+          if branches and #branches > 0 and branches[1] ~= "" then
             -- Branch exists, just checkout
-            cmd = { "git", "checkout", branch }
+            cmd = { "git", "-C", git_root, "checkout", branch }
           else
             -- Branch does not exist, create and checkout
-            cmd = { "git", "checkout", "-b", branch }
+            cmd = { "git", "-C", git_root, "checkout", "-b", branch }
           end
           vim.fn.jobstart(cmd, {
             on_exit = function(_, code)
@@ -300,9 +303,12 @@ local function setup_git_branch_protection()
   vim.api.nvim_create_autocmd("BufWritePre", {
     pattern = "*",
     callback = function()
-      local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null")
-      local branch = handle:read("*l")
-      handle:close()
+      local file_dir = vim.fn.expand("%:p:h")
+      local git_root = vim.fn.systemlist("git -C " .. file_dir .. " rev-parse --show-toplevel")[1]
+      if not git_root or git_root == "" then
+        return
+      end
+      local branch = vim.fn.systemlist("git -C " .. git_root .. " rev-parse --abbrev-ref HEAD")[1]
       if branch and is_protected_branch(branch) then
         prompt_and_switch_branch()
         error("You are on a protected branch (" .. branch .. "). Please switch branches before writing.")
