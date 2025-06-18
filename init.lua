@@ -20,6 +20,21 @@ local function bootstrap_lazy()
   return true
 end
 
+-- setup bufferline
+local function setup_bufferline()
+  require("bufferline").setup({
+    options = {
+      -- Only show buffers (not terminals) in the tabline
+      custom_filter = function(buf_number, buf_numbers)
+        local buftype = vim.bo[buf_number].buftype
+        return buftype ~= "terminal"
+      end,
+    }
+  })
+  vim.keymap.set("n", '<Tab>', ':BufferLineCycleNext<CR>', { noremap = true, silent = true })
+  vim.keymap.set("n", '<S-Tab>', ':BufferLineCyclePrev<CR>', { noremap = true, silent = true })
+end
+
 -- Copilot Config
 local function copilot_config()
   vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
@@ -31,14 +46,7 @@ end
 local function copilotchat_config()
   require("CopilotChat").setup({
     window = {
-      width = 60,
-      position = "right",
-      border = "rounded",
-      title = "Copilot Chat",
-    },
-    layout = {
-      min_width = 30,
-      max_width = 80,
+      width = 40,
     },
     Mappings = {
       close = {"<Esc>", "q"},
@@ -236,13 +244,20 @@ local function setup_plugins()
       "mfussenegger/nvim-lint",
       config = linting_config,
     },
+    {
+      "akinsho/nvim-bufferline.lua",
+      version = "*",
+      dependencies = { "nvim-tree/nvim-web-devicons" },
+      config = function()
+        require("bufferline").setup({})
+      end,
+    }
   })
 end
 
 -- Basic settings
 local function setup_basic_settings()
   vim.opt.number = true
-  vim.opt.relativenumber = true
   vim.opt.expandtab = true
   vim.opt.shiftwidth = 2
   vim.opt.tabstop = 2
@@ -250,7 +265,10 @@ local function setup_basic_settings()
   vim.cmd('syntax on')
 
   vim.opt.termguicolors = true
-  vim.cmd('colorscheme desert')
+
+  -- Enable tabline to always show
+  vim.opt.showtabline = 2
+  -- keymap for switching tabs
 end
 
 -- Git branch protection
@@ -360,7 +378,7 @@ local function run_current_file()
     vim.api.nvim_echo({ { "Unsupported filetype: " .. ft, "ErrorMsg" } }, false, {})
     return
   end
-  vim.cmd("tabnew | terminal " .. cmd)
+  vim.cmd("botright | resize 10 | terminal " .. cmd)
 end
 
 -- Folding
@@ -403,7 +421,9 @@ local function open_custom_terminal()
   if not dir then
     dir = vim.fn.expand("~")
   end
-  vim.cmd("botright 15split | terminal zsh -c 'cd " .. vim.fn.shellescape(dir) .. " && clear && exec zsh'")
+  -- Open a new terminal in the specified directory
+  vim.cmd("botright split | resize 10 | terminal")
+  vim.cmd("cd " .. dir)
 end
 
 -- Custom keybindings and commands
@@ -425,6 +445,7 @@ local function setup_custom_keys()
   vim.api.nvim_set_keymap('t', '<C-k>', [[<C-\><C-n><C-w>k]], { noremap = true })
   vim.api.nvim_set_keymap('t', '<C-l>', [[<C-\><C-n><C-w>l]], { noremap = true })
   _G.run_current_file = run_current_file
+  setup_bufferline()
 end
 
 -- MAIN EXECUTION
