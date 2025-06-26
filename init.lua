@@ -37,7 +37,7 @@ end
 
 -- Copilot Config
 local function copilot_config()
-  vim.api.nvim_set_keymap("i", "<Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
+  vim.api.nvim_set_keymap("i", "<C-Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
 end
@@ -196,8 +196,12 @@ local function get_help_lines()
     " 'zM' - Close all folds",
     "",
     "Run Commands:",
-    "  :X - Run current file in terminal",
+    "  <leader>x - Open and run current file",
     "  :C - Open custom terminal",
+    "  <leader>w - Save all files",
+    "Move around files:",
+    "  <Tab> - Next buffer",
+    "  <S-Tab> - Previous buffer",
     "",
   }
 end
@@ -431,6 +435,9 @@ local function setup_custom_keys()
   -- Custom terminal command and keymap
   vim.api.nvim_create_user_command("C", open_custom_terminal, {})
   vim.api.nvim_set_keymap('n', '<leader>C', ':lua open_custom_terminal()<CR>', { noremap = true, silent = true })
+
+  -- Save all files command
+  vim.api.nvim_set_keymap('n', '<leader>w', ':wa<CR>', { noremap = true, silent = true })
 
   -- Window navigation
   vim.api.nvim_set_keymap('n', '<C-h>', '<C-w>h', { noremap = true, silent = true })
