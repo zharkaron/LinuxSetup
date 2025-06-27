@@ -12,7 +12,7 @@ rm ~/.p10k.zsh
 rm ~/.zshrc
 rm ~/.config/nvim/init.lua 
 
-mkdir -p ~/.config/nvim/init.lua
+mkdir -p ~/.config/nvim
 
 ln -sf ~/.linux-setup/p10k.zsh ~/.p10k.zsh
 ln -sf ~/.linux-setup/zshrc ~/.zshrc
