@@ -2,6 +2,8 @@
 
 ```
 sudo apt update
+sudo apt remove nodejs -y
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y zsh nodejs npm ninja-build gettext cmake unzip curl build-essential tar git
 git clone git@github.com:Zh4rkaron/Linux-setup.git ~/.linux-setup
 git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.linux-setup/oh-my-zsh
