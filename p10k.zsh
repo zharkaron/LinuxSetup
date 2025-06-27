@@ -998,13 +998,17 @@
   # Custom icon.
   typeset -g POWERLEVEL9K_PYENV_VISUAL_IDENTIFIER_EXPANSION='🐍'
 
-  function prompt_sshfs_host() {
+function prompt_sshfs_host() {
   local mount_info remote
-  # Find the mount entry for $PWD or its parent
-  mount_info=$(findmnt -no SOURCE,TARGET,FSTYPE | awk -v dir="$PWD" '$3=="sshfs" && index(dir, $2)==1 {print $1; exit}')
+  # Find the deepest sshfs mountpoint that is a prefix of $PWD
+  mount_info=$(findmnt -no SOURCE,TARGET,FSTYPE | awk -v dir="$PWD" '$3=="sshfs" && index(dir, $2)==1 {print length($2) " " $1 " " $2}')
   if [[ -n $mount_info ]]; then
-    remote=${mount_info%%:*} # Extract the remote part before the colon
-    remote=${remote#*@}      # Remove user@ if present
+    # Get the mount with the longest matching path
+    mount_info=(${(f)mount_info})
+    mount_info=(${(s: :)${(Oa)mount_info}[1]})
+    local source=${mount_info[2]}
+    remote=${source%%:*}
+    remote=${remote#*@}
     p10k segment -f 110 -i '🔗' -t "$remote"
   fi
 }
