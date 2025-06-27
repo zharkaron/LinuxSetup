@@ -23,18 +23,14 @@ ln -sf ~/.linux-setup/oh-my-zsh ~/.oh-my-zsh
 # Install neovim
 
 ```
-# 1. Install dependencies
 sudo apt update
 sudo apt install -y ninja-build gettext cmake unzip curl build-essential tar git
 
-# 2. Clone Neovim source
 git clone https://github.com/neovim/neovim.git
 cd neovim
 
-# 3. Checkout latest stable release
-git checkout stable  # or `git checkout v0.10.0`
+git checkout stable
 
-# 4. Build and install
 make CMAKE_BUILD_TYPE=Release
 sudo make install
 ```
