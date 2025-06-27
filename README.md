@@ -37,3 +37,8 @@ git checkout stable  # or `git checkout v0.10.0`
 make CMAKE_BUILD_TYPE=Release
 sudo make install
 ```
+#  set zsh as your terminal best if you reboot
+```
+chsh -s $(which zsh)  # make zsh your default shell
+source ~/.zshrc        # apply settings without logging out
+```
