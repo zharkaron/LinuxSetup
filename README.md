@@ -2,7 +2,7 @@
 
 ```
 sudo apt update
-sudo apt install zsh
+sudo apt install -y zsh nodejs npm ninja-build gettext cmake unzip curl build-essential tar git
 git clone git@github.com:Zh4rkaron/Linux-setup.git ~/.linux-setup
 git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.linux-setup/oh-my-zsh
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.linux-setup/oh-my-zsh/custom/plugins/zsh-autosuggestions
@@ -23,9 +23,6 @@ ln -sf ~/.linux-setup/oh-my-zsh ~/.oh-my-zsh
 # Install neovim
 
 ```
-sudo apt update
-sudo apt install -y ninja-build gettext cmake unzip curl build-essential tar git
-
 git clone https://github.com/neovim/neovim.git
 cd neovim
 
