@@ -31,6 +31,12 @@ git checkout stable
 make CMAKE_BUILD_TYPE=Release
 sudo make install
 ```
+
+# Authenticate to CopilotChat to use
+```
+:Copilot auth
+```
+
 #  set zsh as your terminal best if you reboot
 ```
 chsh -s $(which zsh)  # make zsh your default shell
