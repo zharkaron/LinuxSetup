@@ -35,6 +35,7 @@
     os_icon                 # os identifier
     dir                     # current directory
     vcs                     # git status
+    sshfs_host             # sshfs host
     # =========================[ Line #2 ]=========================
     newline                 # \n
     prompt_char             # prompt symbol
@@ -997,7 +998,19 @@
   # Custom icon.
   typeset -g POWERLEVEL9K_PYENV_VISUAL_IDENTIFIER_EXPANSION='🐍'
 
+  function prompt_sshfs_host() {
+  local mount_info remote
+  # Find the mount entry for $PWD or its parent
+  mount_info=$(findmnt -no SOURCE,TARGET,FSTYPE | awk -v dir="$PWD" '$3=="sshfs" && index(dir, $2)==1 {print $1; exit}')
+  if [[ -n $mount_info ]]; then
+    remote=${mount_info%%:*} # Extract the remote part before the colon
+    remote=${remote#*@}      # Remove user@ if present
+    p10k segment -f 110 -i '🔗' -t "$remote"
+  fi
+}
+
   ################[ goenv: go environment (https://github.com/syndbg/goenv) ]################
+  functions -M prompt_sshfs_host 2> /dev/null
   # Goenv color.
   typeset -g POWERLEVEL9K_GOENV_FOREGROUND=37
   # Hide go version if it doesn't come from one of these sources.
