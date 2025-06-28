@@ -44,3 +44,12 @@ sudo make install
 chsh -s $(which zsh)  # make zsh your default shell
 source ~/.zshrc        # apply settings without logging out
 ```
+# Fringerprint set up if it dosent work
+```
+$ sudo apt remove fprintd
+$ sudo add-apt-repository ppa:uunicorn/open-fprintd
+$ sudo apt-get update
+$ sudo apt install open-fprintd fprintd-clients python3-validity
+...wait a bit...
+$ fprintd-enroll
+```
