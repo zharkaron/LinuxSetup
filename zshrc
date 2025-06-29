@@ -86,15 +86,42 @@ source $ZSH/oh-my-zsh.sh
 # User configuration
 
 # Automatically pull if entering a GitHub repo and on main
+
+# Track last Git root directory checked
+LAST_GIT_ROOT=""
+
 function github_main_autopull() {
-    if ! git rev-parse --is-inside-work-tree &>/dev/null; then return; fi
+    # Exit if not in a Git repo
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        LAST_GIT_ROOT=""
+        return
+    fi
 
+    # Get current Git repo root directory
+    local current_git_root
+    current_git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+    # Skip if we're still in the same Git repo
+    if [[ "$current_git_root" == "$LAST_GIT_ROOT" ]]; then
+        return
+    fi
+
+    # Update tracked Git root
+    LAST_GIT_ROOT="$current_git_root"
+
+    # Check if remote is GitHub
     local remote_url=$(git remote get-url origin 2>/dev/null)
-    if [[ "$remote_url" != *github.com* ]]; then return; fi
+    if [[ "$remote_url" != *github.com* ]]; then
+        return
+    fi
 
+    # Only act if on main
     local current_branch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "$current_branch" != "main" ]]; then return; fi
+    if [[ "$current_branch" != "main" ]]; then
+        return
+    fi
 
+    # Fetch and compare
     git fetch origin main &>/dev/null
     local local_sha=$(git rev-parse main)
     local remote_sha=$(git rev-parse origin/main)
