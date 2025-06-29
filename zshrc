@@ -85,6 +85,33 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
+# Automatically pull if entering a GitHub repo and on main
+function github_main_autopull() {
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then return; fi
+
+    local remote_url=$(git remote get-url origin 2>/dev/null)
+    if [[ "$remote_url" != *github.com* ]]; then return; fi
+
+    local current_branch=$(git rev-parse --abbrev-ref HEAD)
+    if [[ "$current_branch" != "main" ]]; then return; fi
+
+    git fetch origin main &>/dev/null
+    local local_sha=$(git rev-parse main)
+    local remote_sha=$(git rev-parse origin/main)
+
+    if [[ "$local_sha" != "$remote_sha" ]]; then
+        echo "[autopull] Pulling latest changes from origin/main..."
+        git pull origin main
+    else
+        echo "[autopull] main is already up to date."
+    fi
+}
+
+function chpwd() {
+    github_main_autopull
+}
+
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
