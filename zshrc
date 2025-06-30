@@ -138,6 +138,19 @@ function chpwd() {
     github_main_autopull
 }
 
+gpush() {
+  local commit_message="$1"
+  local branch_name=$(git rev-parse --abbrev-ref HEAD)
+  if [[ -z "$commit_message" ]]; then
+    echo "Usage: gpush <commit_message>"
+    return 1
+  fi
+  git add .
+  git commit -m "$commit_message"
+  git push origin "$branch_name"
+
+}
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
