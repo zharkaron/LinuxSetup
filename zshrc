@@ -138,7 +138,6 @@ function chpwd() {
     github_main_autopull
 }
 
-
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
