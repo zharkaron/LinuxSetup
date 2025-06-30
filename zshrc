@@ -1,5 +1,5 @@
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
-export PATH="$HOME/.local/kitty.app/bin:$PATH"
+export PATH="$HOME/.linux-setup/bin:$PATH"
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -151,6 +151,9 @@ gpush() {
 
 }
 
+alias vim='nvim'
+alias vi='nvim'
+alias v='nvim'
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
