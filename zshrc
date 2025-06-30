@@ -139,7 +139,7 @@ function chpwd() {
 }
 
 gpush() {
-  local commit_message="$1"
+  local commit_message="$*"
   local branch_name=$(git rev-parse --abbrev-ref HEAD)
   if [[ -z "$commit_message" ]]; then
     echo "Usage: gpush <commit_message>"
