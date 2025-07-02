@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e 
 
-ssh mydocker "docker-compose stop" || true
-ssh mydocker "docker-compose rm -f"
-ssh mydocker "docker-compose up --build "
+ssh mydocker "cd ~/docker && docker-compose stop" || true
+ssh mydocker "cd ~/docker && docker-compose rm -f"
+ssh mydocker "cd ~/docker && docker-compose up --build "
