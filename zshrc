@@ -156,6 +156,15 @@ alias vi='nvim'
 alias v='nvim'
 alias push-server="rsync -avz --progress --exclude='.git/' --exclude='.gitignore' ~/projects/docker/ zhark@server:/home/zhark/docker/"
 alias pull-server="rsync -avz --exclude='.git/' --exclude='.gitignore' zhark@server:/home/zhark/docker/ ~/projects/docker/"
+
+docker() {
+  ssh mydocker docker "$@"
+}
+docker-compose() {
+  ssh mydocker docker-compose "$@"
+}
+
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
