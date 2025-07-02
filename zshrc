@@ -1,3 +1,13 @@
+# Update .linux-setup repo on terminal start
+if [[ -d "$HOME/.linux-setup/.git" ]]; then
+  git -C "$HOME/.linux-setup" pull --ff-only --quiet 2>/dev/null
+fi
+
+# Source the .linux-setup zshrc config
+if [[ -f "$HOME/.linux-setup/zshrc" ]]; then
+  source "$HOME/.linux-setup/zshrc"
+fi
+
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 export PATH="$HOME/.linux-setup/bin:$PATH"
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
