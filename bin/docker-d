@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e 
+
+ssh mydocker "docker-compose stop" || true
+ssh mydocker "docker-compose rm -f"
+ssh mydocker "docker-compose up --build -d"
