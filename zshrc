@@ -154,7 +154,7 @@ gpush() {
 alias vim='nvim'
 alias vi='nvim'
 alias v='nvim'
-alias docker-sync="rsync -avz --progress --exclude='.git/' --execlude='.gitignore' ~/projects/docker/ zhark@server:/home/zhark/docker/"
+alias docker-sync="rsync -avz --progress --exclude='.git/' --exclude='.gitignore' ~/projects/docker/ zhark@server:/home/zhark/docker/"
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
