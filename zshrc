@@ -158,10 +158,10 @@ alias push-server="rsync -avz --progress --exclude='.git/' --exclude='.gitignore
 alias pull-server="rsync -avz --exclude='.git/' --exclude='.gitignore' zhark@server:/home/zhark/docker/ ~/projects/docker/"
 
 docker() {
-  ssh mydocker docker "$@"
+  ssh -t mydocker docker "$@"
 }
 docker-compose() {
-  ssh mydocker docker-compose "$@"
+  ssh -t mydocker docker-compose "$@"
 }
 
 
