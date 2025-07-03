@@ -148,7 +148,7 @@ function fish_prompt
     set vpn_part (prompt_vpn)
     set time_part (prompt_time)
 
-    echo -n (color_purple) "╭─ " $os_part "" (color_cyan)$symbol_part "" (color_cyan)$path_part "" $git_part "" $vpn_part(color_gray) $time_part(color_reset)
+    echo -n (color_purple) "╭─ " $os_part (color_cyan) $symbol_part (color_cyan) $path_part $git_part $vpn_part (color_gray) $time_part (color_reset)
     echo
     echo -n (color_purple) "╰─❯ " (color_reset)
 end
