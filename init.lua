@@ -37,7 +37,7 @@ end
 
 -- Copilot Config
 local function copilot_config()
-  vim.api.nvim_set_keymap("i", "<C-Tab>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
+  vim.api.nvim_set_keymap("i", "<C-e>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
 end
@@ -61,6 +61,24 @@ local function copilotchat_config()
   vim.keymap.set("n", "<leader>ce", ":CopilotChatExplain #buffer<CR>", { desc = "Copilot Chat Explain" })
   vim.keymap.set("n", "<leader>cr", ":CopilotChatReview #buffer<CR>", { desc = "Copilot Chat Review" })
   vim.keymap.set("n", "<leader>c", ":CopilotChat<CR>", { desc = "Open Copilot Chat" })
+  vim.keymap.set("n", "<leader>ca", function()
+    -- Insert '#file:`filename`' for all open files into the current buffer at cursor
+    local lines = {}
+    for _, b in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(b) and vim.api.nvim_buf_get_option(b, "buflisted") then
+        local fname = vim.api.nvim_buf_get_name(b)
+        if fname ~= "" then
+          table.insert(lines, "#file:`" .. fname .. "`")
+        end
+      end
+    end
+    if #lines > 0 then
+      vim.api.nvim_buf_set_lines(0, vim.fn.line('.') - 1, vim.fn.line('.') - 1, false, lines)
+      vim.notify("Inserted #file context commands into current buffer.", vim.log.levels.INFO)
+    else
+      vim.notify("No open files to insert.", vim.log.levels.WARN)
+    end
+  end, { desc = "Insert #file context commands for all open files at cursor" })
 end
 
 -- Run commands
