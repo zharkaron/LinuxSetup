@@ -35,9 +35,10 @@ local function setup_bufferline()
   vim.keymap.set("n", '<S-Tab>', ':BufferLineCyclePrev<CR>', { noremap = true, silent = true })
 end
 
+
 -- Copilot Config
 local function copilot_config()
-  vim.api.nvim_set_keymap("i", "<C-e>", 'copilot#Accept("<Tab>")', { expr = true, noremap = true, silent = true })
+  vim.api.nvim_set_keymap("i", "<C-e>", 'copilot#Accept("<CR>")', { expr = true, noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-e>", ":Copilot enable<CR>", { noremap = true, silent = true })
   vim.api.nvim_set_keymap("n", "<C-d>", ":Copilot disable<CR>", { noremap = true, silent = true })
 end
@@ -206,6 +207,7 @@ local function get_help_lines()
     "  <leader>ce - Explain code with Copilot Chat",
     "  <leader>cr - Review code with Copilot Chat",
     "  <leader>c - Open Copilot Chat",
+    "  <leader>ca - Insert #file context commands for all open files at cursor",
     "Folding:",
     " 'zo' - Open fold",
     " 'zc' - Close fold",
@@ -215,7 +217,7 @@ local function get_help_lines()
     "",
     "Run Commands:",
     "  <leader>x - Open and run current file",
-    "  :C - Open custom terminal",
+    "  <leader>r - Open terminal in home or hovered directory",
     "  <leader>w - Save all files",
     "Move around files:",
     "  <Tab> - Next buffer",
@@ -403,6 +405,22 @@ local function run_current_file()
   vim.cmd("botright | resize 10 | terminal " .. cmd)
 end
 
+-- Clipboard yank on visual mode exit
+local function setup_clipboard_yank_on_visual_exit()
+  vim.api.nvim_create_autocmd("ModeChanged", {
+    pattern = "v:*",
+    callback = function()
+      -- Only yank if leaving visual mode
+      if vim.fn.mode() == "n" then
+        -- Yank the last visually selected text to the unnamed and system clipboard
+        vim.cmd('normal! ""y')
+        vim.fn.setreg("+", vim.fn.getreg("\""))
+        vim.notify("Yanked visual selection to clipboard.", vim.log.levels.INFO)
+      end
+    end,
+  })
+end
+
 -- Folding
 local function setup_folds()
   vim.o.foldmethod = "expr"
@@ -444,15 +462,16 @@ local function open_custom_terminal()
     dir = vim.fn.expand("~")
   end
   -- Open a new terminal in the specified directory
-  vim.cmd("botright split | resize 10 | terminal")
-  vim.cmd("cd " .. dir)
+  vim.cmd("botright split | resize 10")
+  vim.cmd("lcd " .. vim.fn.fnameescape(dir))
+  vim.cmd("terminal")
 end
 
 -- Custom keybindings and commands
 local function setup_custom_keys()
   -- Custom terminal command and keymap
   vim.api.nvim_create_user_command("C", open_custom_terminal, {})
-  vim.api.nvim_set_keymap('n', '<leader>C', ':lua open_custom_terminal()<CR>', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<leader>r', ':C<CR>', { noremap = true, silent = true })
 
   -- Save all files command
   vim.api.nvim_set_keymap('n', '<leader>w', ':wa<CR>', { noremap = true, silent = true })
@@ -479,7 +498,6 @@ if bootstrap_lazy() then
   setup_basic_settings()
   setup_git_branch_protection()
   setup_folds()
+  setup_clipboard_yank_on_visual_exit()
   setup_custom_keys()
 end
-
-
