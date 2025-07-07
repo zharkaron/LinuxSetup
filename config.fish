@@ -1,3 +1,7 @@
+# Fish shell configuration file
+
+export PATH="$HOME/.linux-setup/bin:$PATH"
+
 # ────── 🎨 Color Helpers ──────
 function color_reset; set_color normal; end
 function color_bold_white; set_color white --bold; end
