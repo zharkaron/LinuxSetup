@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# === installiso: Write ISO to USB using dd ===
+
+ISO_PATH="$1"
+DEVICE="$2"
+
+# === Basic usage check ===
+if [[ -z "$ISO_PATH" || -z "$DEVICE" ]]; then
+  echo "Usage: $0 /path/to/file.iso /dev/sdX"
+  exit 1
+fi
+
+# === Confirm ISO file exists ===
+if [[ ! -f "$ISO_PATH" ]]; then
+  echo "Error: ISO file '$ISO_PATH' does not exist."
+  exit 1
+fi
+
+# === Safety check: don't allow writing to partition (e.g. /dev/sdb1) ===
+if [[ "$DEVICE" =~ [0-9]$ ]]; then
+  echo "Error: Please use the whole device (e.g., /dev/sdb), not a partition (e.g., /dev/sdb1)."
+  exit 1
+fi
+
+# === Final confirmation prompt ===
+echo "About to write '$ISO_PATH' to '$DEVICE'"
+read -p "This will erase ALL DATA on $DEVICE. Are you sure? (yes/no): " CONFIRM
+
+if [[ "$CONFIRM" != "yes" ]]; then
+  echo "Aborted."
+  exit 1
+fi
+
+# === Start writing ===
+echo "Writing ISO to USB... this may take a few minutes."
+sudo dd if="$ISO_PATH" of="$DEVICE" bs=4M status=progress oflag=sync
+
+# === Flush write buffers ===
+sync
+
+echo "Done. You may now safely remove the USB drive."
