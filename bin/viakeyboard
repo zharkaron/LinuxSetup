@@ -1,0 +1,3 @@
+#!/bin/bash
+
+bash ~/.linux-setup/bin/via ~/.linux-setup/json/EPOMAKER\ Split65.json
