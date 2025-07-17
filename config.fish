@@ -1,4 +1,5 @@
 # Fish shell configuration file
+export KITTY_CONFIG_DIRECTORY="$HOME/.linux-setup/"
 
 export PATH="$HOME/.linux-setup/bin:$PATH"
 
