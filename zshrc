@@ -10,7 +10,7 @@ CYAN="%F{cyan}"
 WHITE="%F{white}"
 BOLD="%B"
 RESET="%f%b%k"
-BRBLACK="%F{black}"
+BRBLACK="%F{grey}"
 
 # ────── OS Icon ──────
 prompt_os() {
