@@ -1,21 +1,3 @@
-# Install customizations
-
-```
-sudo apt update
-sudo apt remove nodejs -y
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y fish nodejs npm ninja-build gettext cmake unzip curl build-essential tar git shellcheck luarocks
-sudo luarocks install luacheck
-git clone git@github.com:Zh4rkaron/Linux-setup.git ~/.linux-setup
-rm ~/.config/fish/config.fish
-rm ~/.config/nvim/init.lua 
-mkdir -p ~/.config/fish
-mkdir -p ~/.config/nvim
-
-ln -sf ~/.linux-setup/config.fish ~/.config/fish/config.fish
-ln -sf ~/.linux-setup/init.lua ~/.config/nvim/init.lua 
-
-```
 # Install neovim
 
 ```
