@@ -1,5 +1,3 @@
-bindkey -v
-
 # ────── Color Codes ──────
 RED="%F{red}"
 GREEN="%F{green}"
@@ -99,6 +97,11 @@ clone_if_missing $ZSH_AUTOCOMPLETE https://github.com/marlonrichert/zsh-autocomp
 [[ -f $ZSH_AUTOSUGGEST/zsh-autosuggestions.zsh ]] && source $ZSH_AUTOSUGGEST/zsh-autosuggestions.zsh
 [[ -f $ZSH_AUTOCOMPLETE/zsh-autocomplete.plugin.zsh ]] && source $ZSH_AUTOCOMPLETE/zsh-autocomplete.plugin.zsh
 
+#------- Personalized openings -----
+alias v="nvim -u ~/.Linux-setup/nvim/init.lua"
+alias vi="nvim -u ~/.Linux-setup/nvim/init.lua"
+alias vim="nvim -u ~/.Linux-setup/nvim/init.lua"
+alias nvim="nvim -u ~/.Linux-setup/nvim/init.lua"
 
 # ────── Your scripts/bin dir ──────
 export PATH="$HOME/.linux-setup/bin:$PATH"

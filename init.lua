@@ -1,3 +1,19 @@
+-- Make background transparent
+local function setup_transparency()
+  vim.cmd([[
+    highlight Normal guibg=NONE ctermbg=NONE
+    highlight NormalNC guibg=NONE ctermbg=NONE
+    highlight SignColumn guibg=NONE ctermbg=NONE
+    highlight VertSplit guibg=NONE ctermbg=NONE
+    highlight StatusLine guibg=NONE ctermbg=NONE
+    highlight LineNr guibg=NONE ctermbg=NONE
+    highlight EndOfBuffer guibg=NONE ctermbg=NONE
+    highlight NonText guibg=NONE ctermbg=NONE
+    highlight FloatBorder guibg=NONE ctermbg=NONE
+    highlight NormalFloat guibg=NONE ctermbg=NONE
+  ]])
+end
+
 -- Bootstrap lazy.nvim
 local function bootstrap_lazy()
   local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -34,7 +50,6 @@ local function setup_bufferline()
   vim.keymap.set("n", '<Tab>', ':BufferLineCycleNext<CR>', { noremap = true, silent = true })
   vim.keymap.set("n", '<S-Tab>', ':BufferLineCyclePrev<CR>', { noremap = true, silent = true })
 end
-
 
 -- Copilot Config
 local function copilot_config()
@@ -500,4 +515,6 @@ if bootstrap_lazy() then
   setup_folds()
   setup_clipboard_yank_on_visual_exit()
   setup_custom_keys()
+  setup_transparency()
 end
+
