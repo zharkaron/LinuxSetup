@@ -14,11 +14,11 @@ bold_italic_font auto
 font_size 12.0
 
 # Colors
-background #000000
-foreground #ff2a2a
-cursor #ff2a2a
-selection_foreground #000000
-selection_background #ff2a2a
+background #ffffff
+foreground #000000
+cursor #000000
+selection_foreground #ffffff
+selection_background #000000
 
 # ANSI Colors (Dark Red Kali Style)
 
@@ -31,7 +31,7 @@ map ctrl+shift+k neighboring_window up
 map ctrl+shift+l neighboring_window right
 
 # Optional: Transparency
-background_opacity 0.9
+background_opacity 1.0
 
 # Font
 font_family FiraCode Nerd Font

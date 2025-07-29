@@ -2,6 +2,22 @@
 export PATH="$HOME/.LinuxSetup/bin:$PATH"
 
 
+# Start agent if it's not running
+if [ -z "$SSH_AUTH_SOCK" ] || ! ps -p "$SSH_AGENT_PID" > /dev/null 2>&1; then
+    eval "$(ssh-agent -s)"
+fi
+
+# Lazy ssh-add wrapper
+ssh() {
+    # Check if key is loaded
+    if ! ssh-add -l | grep -q id_ed25519; then
+        ssh-add ~/.ssh/id_ed25519
+    fi
+    # Unset this override so future ssh calls go directly
+    unset -f ssh
+    command ssh "$@"
+}
+
 git_prompt_info() {
   # Check if we're inside a git repo
   if git rev-parse --is-inside-work-tree &>/dev/null; then
@@ -90,6 +106,8 @@ setopt hist_verify            # show command with history expansion to user befo
 
 # force zsh to show the complete history
 alias history="history 0"
+
+alias dadmode="xcalib -i -a"
 
 # configure `time` format
 TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\ncpu\t%P'
