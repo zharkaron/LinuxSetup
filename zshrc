@@ -11,11 +11,13 @@ fi
 ssh() {
     # Check if key is loaded
     if ! ssh-add -l | grep -q id_ed25519; then
-        ssh-add ~/.ssh/id_ed25519
+      if ssh-add ~/.ssh/id_ed25519; then
+        unset -f ssh
+      else
+        echo "Failed to add SSH key. Please check your SSH agent and key."
+        return 1
+      fi
     fi
-    # Unset this override so future ssh calls go directly
-    unset -f ssh
-    command ssh "$@"
 }
 
 git_prompt_info() {
