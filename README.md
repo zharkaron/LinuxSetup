@@ -1,3 +1,7 @@
+# Setup zshrc
+
+ln -sf ~/.LinuxSetup/zshrc ~/.zshrc
+
 # Install neovim
 
 ```
