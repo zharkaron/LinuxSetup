@@ -2,6 +2,7 @@
 
 ln -sf ~/.LinuxSetup/zshrc ~/.zshrc
 sudo dnf/apt install zsh-syntax-highlighting
+sudo dnf/apt install zsh-autosuggestions
 
 # Install neovim
 
