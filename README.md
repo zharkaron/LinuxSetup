@@ -1,9 +1,17 @@
 # Setup zshrc
 ```
+sudo dnf/apt install zsh
 ln -sf ~/.LinuxSetup/zshrc ~/.zshrc
 sudo dnf/apt install zsh-syntax-highlighting
 sudo dnf/apt install zsh-autosuggestions
 ```
+
+# Setup kitty terminal
+```
+sudo dnf/apt install kitty
+ln -sf ~/.LinuxSetup/kitty.conf ~/.config/kitty/kitty.conf
+```
+
 # Install neovim
 
 ```
