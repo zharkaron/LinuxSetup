@@ -303,7 +303,7 @@ alias la='ls -A'
 alias l='ls -CF'
 
 # personal alias
-alias cat='batcat --theme="Visual Studio Dark+" --style=numbers --paging=never'
+alias cat='bat --theme="Visual Studio Dark+" --style=numbers --paging=never'
 alias v="nvim -u ~/.LinuxSetup/init.lua"
 alias vi="nvim -u ~/.LinuxSetup/init.lua"
 alias vim="nvim -u ~/.LinuxSetup/init.lua"
