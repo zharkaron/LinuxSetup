@@ -308,6 +308,11 @@ local function setup_basic_settings()
   -- Enable tabline to always show
   vim.opt.showtabline = 2
   -- keymap for switching tabs
+  
+  -- set color while in the multi-user environment
+  vim.opt.background = "dark"
+
+
 end
 
 -- Git branch protection

@@ -309,6 +309,16 @@ alias vi="nvim -u ~/.LinuxSetup/init.lua"
 alias vim="nvim -u ~/.LinuxSetup/init.lua"
 alias nvim="nvim -u ~/.LinuxSetup/init.lua"
 
+# LibreOffice shortcuts
+alias writer='libreoffice --writer'
+alias calc='libreoffice --calc'
+alias draw='libreoffice --draw'
+alias impress='libreoffice --impress'
+alias base='libreoffice --base'
+alias global='libreoffice --global'
+alias math='libreoffice --math'
+alias web='libreoffice --web'
+
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
     . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
