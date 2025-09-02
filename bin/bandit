@@ -8,6 +8,7 @@ user="bandit$level"
 declare -A passwords
 passwords[bandit0]="bandit0"
 passwords[bandit1]="ZjLjTmM6FvvyRnrb2rfNWOZOTa6ip5If"
+passwords[bandit2]="263JGJPfgU6LtdEvgfWU1XP5yac29mFx"
 xdg-open "https://overthewire.org/wargames/bandit/${user}.html"
 
 if [[ -n "${passwords[$user]}" ]]; then
