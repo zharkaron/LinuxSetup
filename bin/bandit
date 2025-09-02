@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# This is a script to ssh into a bandit that i chose without writing it over and over again
+
+level=$1
+user="bandit$level"
+
+ssh -p 2220 ${user}@bandit.labs.overthewire.org
