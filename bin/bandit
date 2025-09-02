@@ -5,4 +5,11 @@
 level=$1
 user="bandit$level"
 
-ssh -p 2220 ${user}@bandit.labs.overthewire.org
+declare -A passwords
+passwords[bandit0]="bandit0"
+
+if [[ -n "${passwords[$user]}" ]]; then
+  sshpass -p "${passwords[$user]}" ssh -p 2220 ${user}@bandit.labs.overthewire.org
+else
+  ssh -p 2220 ${user}@bandit.labs.overthewire.org
+fi
