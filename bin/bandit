@@ -9,6 +9,10 @@ declare -A passwords
 passwords[bandit0]="bandit0"
 passwords[bandit1]="ZjLjTmM6FvvyRnrb2rfNWOZOTa6ip5If"
 passwords[bandit2]="263JGJPfgU6LtdEvgfWU1XP5yac29mFx"
+passwords[bandit3]="MNk8KNH3Usiio41PRUEoDFPqfxLPlSmx"
+passwords[bandit4]="2WmrDFRmJIq3IPxneAaMGhap0pFhF3NJ"
+passwords[bandit5]="4oQYVPkxZOOEOO5pTW81FB8j8lxXGUQw"
+
 xdg-open "https://overthewire.org/wargames/bandit/${user}.html"
 
 if [[ -n "${passwords[$user]}" ]]; then
