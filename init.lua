@@ -178,7 +178,7 @@ end
 -- Treesitter Config
 local function treesitter_config()
   require('nvim-treesitter.configs').setup({
-    ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css", "json", "jsonc" },
+    ensure_installed = { "c", "cpp", "python", "bash", "lua", "javascript", "html", "css", "json", "jsonc", "markdown", "markdown_inline", "vimdoc"},
     highlight = { enable = true },
     indent = { enable = true },
   })
