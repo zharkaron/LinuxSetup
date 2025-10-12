@@ -184,6 +184,8 @@ local function treesitter_config()
   })
 end
 
+-- DR2n6!prgKmc
+
 -- Linting Config
 local function linting_config()
   require("lint").linters_by_ft = {
