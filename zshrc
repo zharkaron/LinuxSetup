@@ -120,6 +120,9 @@ alias ll='ls -l --color=auto'
 alias lla='ls -la --color=auto'
 alias gpull='git pull'
 alias gmain='git checkout main'
+gbranch() {
+  git checkout -b "$1"
+}
 alias v='nvim'
 alias vi='nvim'
 alias vim='nvim'
