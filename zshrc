@@ -126,6 +126,7 @@ gbranch() {
 alias v='nvim'
 alias vi='nvim'
 alias vim='nvim'
+alias academy='sudo openvpn --config /etc/openvpn/client/academy-regular.ovpn'
 
 # Enable command auto-correction
 ENABLE_CORRECTION="true"
