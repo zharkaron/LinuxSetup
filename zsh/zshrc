@@ -1,0 +1,24 @@
+# PATH
+
+# Root of LinuxSetup ZSH config
+ZSH_ROOT="$HOME/.LinuxSetup/zsh"
+
+export PATH="$ZSH_ROOT/bin:$PATH"
+
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_FIND_NO_DUPS
+setopt SHARE_HISTORY
+setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
+
+# Load core files
+source "$ZSH_ROOT/core/prompt.zsh"
+source "$ZSH_ROOT/core/aliases.zsh"
+source "$ZSH_ROOT/core/plugins.zsh"

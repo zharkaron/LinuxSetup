@@ -1,9 +1,0 @@
-Host AdminServer
-  HostName 157.230.69.204
-  User zharkaron
-  Port 2222
-
-Host DockerServer
-  HostName 157.230.69.204
-  User dockeruser
-  Port 2222

@@ -1,8 +1,24 @@
 -- init.lua
-vim.opt.rtp:prepend("~/.local/share/nvim/lazy/lazy.nvim")
+-- init.lua
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
--- Load plugins
-require("plugins")
+if not vim.loop.fs_stat(lazypath) then
+  -- clone lazy.nvim if it doesn't exist
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+
+-- prepend lazy.nvim to runtime path
+vim.opt.rtp:prepend(lazypath)
+
+-- now load your plugins
+require("lazy").setup("plugins") -- adjust path if your plugins.lua is elsewhere
 
 -- Load core Neovim configuration
 require("nvim.config")
@@ -52,3 +68,10 @@ require("terminal.keys")
 
 -- telescope
 require("telescope.setup")
+
+-- Help list
+require("help.config")
+
+vim.api.nvim_create_user_command("MyHelp", function()
+  require("help.config").show()
+end, {})

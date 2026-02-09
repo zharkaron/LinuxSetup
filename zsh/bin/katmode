@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DEVICE_ID=9  # Raydium Touch System
+
+case "$1" in
+  enable)
+
+    echo "Disabling touchscreen..."
+    xinput disable $DEVICE_ID
+    ;;
+  disable)
+    echo "Enabling touchscreen..."
+    xinput enable $DEVICE_ID
+    ;;
+  *)
+    echo "Usage: $0 [enable|disable]"
+    exit 1
+    ;;
+esac

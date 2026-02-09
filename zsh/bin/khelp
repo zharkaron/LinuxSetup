@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+README="$HOME/.config/kitty/README.md"
+
+if [[ -f $README ]]; then
+    cat "$README"
+else
+    echo "kitty README not found at $README"
+fi
