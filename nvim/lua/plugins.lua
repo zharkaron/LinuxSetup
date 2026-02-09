@@ -1,5 +1,5 @@
 -- lua/plugins.lua
-return require("lazy").setup({
+return {
     -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
@@ -77,6 +77,18 @@ return require("lazy").setup({
         require("telescope.setup")
       end,
     },
+        -- Render Markdown
+    {
+      "MeanderingProgrammer/render-markdown.nvim",
+      ft = { "markdown" },
+      dependencies = {
+        "nvim-treesitter/nvim-treesitter",
+        "nvim-tree/nvim-web-devicons",
+      },
+      config = function()
+        require("render-markdown").setup({})
+      end,
+    },
 
     -- Colorscheme
     { "morhetz/gruvbox" },
@@ -86,4 +98,4 @@ return require("lazy").setup({
         "nvim-lualine/lualine.nvim",
         dependencies = "nvim-tree/nvim-web-devicons",
     },
-})
+}

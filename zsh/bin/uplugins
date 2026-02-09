@@ -1,0 +1,23 @@
+#!/usr/bin/env zsh
+
+PLUGIN_DIR="$HOME/.config/zsh/plugins"
+PLUGIN_LIST="$HOME/.config/zsh/plugins.txt"
+
+mkdir -p "$PLUGIN_DIR"
+
+while read -r url; do
+    [[ -z "$url" ]] && continue
+
+    name=$(basename "$url" .git)
+    target="$PLUGIN_DIR/$name"
+
+    if [[ -d "$target/.git" ]]; then
+        echo "Updating $name..."
+        git -C "$target" pull --ff-only
+    else
+        echo "Cloning $name..."
+        git clone "$url" "$target"
+    fi
+done < "$PLUGIN_LIST"
+
+echo "Plugins updated."

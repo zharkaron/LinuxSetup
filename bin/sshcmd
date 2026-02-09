@@ -1,6 +1,0 @@
-#!/bin/bash
-
-REMOTE_DIR="/home/zhark/docker"
-REMOTE_HOST="Server"   # change to your actual remote host or IP
-
-ssh "$REMOTE_HOST" bash -c "'cd $REMOTE_DIR && $*'" -- "$@"
