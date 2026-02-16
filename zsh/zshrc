@@ -18,6 +18,8 @@ setopt SHARE_HISTORY
 setopt APPEND_HISTORY
 setopt INC_APPEND_HISTORY
 
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
 # Load core files
 source "$ZSH_ROOT/core/prompt.zsh"
 source "$ZSH_ROOT/core/aliases.zsh"
