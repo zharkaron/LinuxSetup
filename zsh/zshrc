@@ -20,6 +20,13 @@ setopt INC_APPEND_HISTORY
 
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 
+# Show Artemis splash once per terminal session
+if [[ -o interactive && -z "$ARTEMIS_SHOWN" ]]; then
+    export ARTEMIS_SHOWN=1
+    # Run icat in background, disown it, no output
+    kitty +kitten icat --align left --transfer-mode file $ZSH_ROOT/themes/ArtemisBig.png & disown
+fi
+
 # Load core files
 source "$ZSH_ROOT/core/prompt.zsh"
 source "$ZSH_ROOT/core/aliases.zsh"
