@@ -35,14 +35,16 @@ The installer re-runs itself with `sudo` when needed, detects the original user,
 
 It installs or attempts to install:
 
-- Kitty
-- Neovim
+- latest upstream Kitty
+- latest upstream Neovim
 - Zsh
 - build tools
 - `curl`
 - ShellCheck
 - LuaRocks
 - `luacheck` through LuaRocks
+
+Neovim is installed from the official GitHub release archive and Kitty is installed with the official Kitty installer so they are not limited by older distro package repositories. Zsh is installed from the configured system package repositories.
 
 It then links the repo configs into the target user account:
 
