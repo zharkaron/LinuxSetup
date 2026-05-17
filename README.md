@@ -178,7 +178,7 @@ Some helper scripts contain machine-specific values such as remote host names, d
 
 ## Recommended Next Improvements
 
-See [docs/github-issues.md](docs/github-issues.md) for issue-ready improvement tasks.
+See [docs/installer.md](docs/installer.md) for installer notes and [docs/issues.md](docs/issues.md) for the active improvement issue list.
 
 Highest priority:
 
