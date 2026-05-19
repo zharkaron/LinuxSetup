@@ -28,14 +28,19 @@ If it prints something like /usr/bin/zsh, you’re good to go.
 - `core/`  
   - `prompt.zsh`: Custom Fish-like prompt  
   - `aliases.zsh`: Shell aliases
-  - `plugins.zsh`: List plugin repositories you want to install.
+  - `plugins.zsh`: Loads installed plugins.
 
 - `plugins/`  
-  Drop .zsh plugin files here. They are automatically sourced.
+  Contains cloned plugin repositories managed by `zsh/bin/uplugins`.
+
+- `plugins.txt`
+  Lists plugin Git URLs for `zsh/bin/uplugins`.
 
 
 ## Plugin Flow
 
-1. Add plugin repo URLs inside `plugins.zsh`
-2. Run a script (to be created) that clones/updates plugins into `plugins/`
-3. `zshrc` auto-loads everything in `plugins/`
+1. Add plugin repo URLs inside `plugins.txt`
+2. Run `uplugins` to clone or update plugins into `plugins/`
+3. `zshrc` loads configured plugins from `core/plugins.zsh`
+
+The main installer runs `uplugins` automatically after linking the Zsh config and helper scripts.

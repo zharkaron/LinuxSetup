@@ -53,6 +53,8 @@ The installer links:
 
 Helper scripts from `zsh/bin` are linked into `~/.local/bin` one file at a time. The installer does not replace a real `~/.local/bin` directory. If an older installer run left `~/.local/bin` as a symlink, the installer repairs it back into a real directory.
 
+Zsh plugins listed in `zsh/plugins.txt` are cloned or updated into `zsh/plugins` automatically by `zsh/bin/uplugins`. The same helper can be run manually later to refresh plugins.
+
 ## Graphical Session Behavior
 
 When run over SSH or another non-graphical session, the installer skips GNOME `gsettings` terminal-default changes because D-Bus is not available. This is expected and will appear in the skipped summary.
@@ -70,4 +72,3 @@ Remaining installer work is tracked separately:
 - make config linking non-destructive
 - add `--dry-run`, `--force`, and skip flags
 - fix the `~/.LinuxSetup` path assumption used by Zsh
-- automatically clone/update Zsh plugins

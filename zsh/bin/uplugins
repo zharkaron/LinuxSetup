@@ -1,11 +1,22 @@
 #!/usr/bin/env zsh
 
-PLUGIN_DIR="$HOME/.config/zsh/plugins"
-PLUGIN_LIST="$HOME/.config/zsh/plugins.txt"
+SCRIPT_PATH="${0:A}"
+ZSH_ROOT="${ZSH_ROOT:-${SCRIPT_PATH:h:h}}"
+PLUGIN_DIR="${ZSH_PLUGIN_DIR:-$ZSH_ROOT/plugins}"
+PLUGIN_LIST="${ZSH_PLUGIN_LIST:-$ZSH_ROOT/plugins.txt}"
+
+if [[ ! -f "$PLUGIN_LIST" ]]; then
+    echo "Plugin list not found: $PLUGIN_LIST" >&2
+    exit 1
+fi
 
 mkdir -p "$PLUGIN_DIR"
 
-while read -r url; do
+while IFS= read -r url || [[ -n "$url" ]]; do
+    url="${url%%#*}"
+    url="${url#"${url%%[![:space:]]*}"}"
+    url="${url%"${url##*[![:space:]]}"}"
+
     [[ -z "$url" ]] && continue
 
     name=$(basename "$url" .git)

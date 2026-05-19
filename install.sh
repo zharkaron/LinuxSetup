@@ -223,6 +223,24 @@ link_bin_scripts() {
     done
 }
 
+install_zsh_plugins() {
+    local updater="$SETUP_DIR/zsh/bin/uplugins"
+
+    if [[ ! -x "$updater" ]]; then
+        echo "Warning: Zsh plugin updater is not executable: $updater"
+        FAILED_PACKAGES+=("zsh plugins")
+        return
+    fi
+
+    echo "Installing/updating Zsh plugins"
+    if sudo -u "$TARGET_USER" HOME="$TARGET_HOME" ZSH_ROOT="$SETUP_DIR/zsh" "$updater"; then
+        INSTALLED_PACKAGES+=("zsh plugins")
+    else
+        echo "Warning: failed to install/update Zsh plugins"
+        FAILED_PACKAGES+=("zsh plugins")
+    fi
+}
+
 get_zsh_path() {
     if [[ -x /usr/bin/zsh ]]; then
         echo "/usr/bin/zsh"
@@ -371,6 +389,7 @@ fi
 # ---------------------------------------------
 link_file "$SETUP_DIR/zsh/zshrc" "$TARGET_HOME/.zshrc"
 link_bin_scripts "$SETUP_DIR/zsh/bin" "$TARGET_HOME/.local/bin"
+install_zsh_plugins
 
 # ---------------------------------------------
 # Set kitty as default terminal (where supported)
