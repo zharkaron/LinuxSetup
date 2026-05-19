@@ -5,3 +5,8 @@ alias ls='ls --color=auto'
 alias la='ls -a'
 alias ll='ls -ll'
 alias lla='ls -la'
+
+# vim aliases
+alias v='nvim'
+alias vi='nvim'
+alias vim='nvim'
