@@ -66,6 +66,18 @@ require("terminal.config")
 require("terminal.style")
 require("terminal.keys")
 
+-- LSP
+-- Using a command to defer loading until plugins are ready
+vim.api.nvim_create_user_command("LoadLSP", function()
+  require("lsp.config")
+  require("lsp.keys")
+  require("lsp.cmp")
+end, {})
+vim.cmd("LoadLSP")
+
+-- DAP
+require("dap.config")
+
 -- telescope
 require("telescope.setup")
 
