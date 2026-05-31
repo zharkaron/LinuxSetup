@@ -83,4 +83,17 @@ return {
     "nvim-lualine/lualine.nvim",
     dependencies = "nvim-tree/nvim-web-devicons",
   },
+
+  -- LSP Configuration
+  { "neovim/nvim-lspconfig" },
+
+  -- Completion
+  { "hrsh7th/nvim-cmp", event = "InsertEnter" },
+  { "hrsh7th/cmp-nvim-lsp", event = "InsertEnter" },
+
+  -- DAP
+  { "mfussenegger/nvim-nio", dir = "/home/zharkaron/.LinuxSetup/nvim-nio" },
+  { "mfussenegger/nvim-dap" },
+  { "rcarriga/nvim-dap-ui", dependencies = "mfussenegger/nvim-nio" },
+  { "theHamsta/nvim-dap-virtual-text" },
 }
