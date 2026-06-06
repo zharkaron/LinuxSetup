@@ -1,2 +1,2 @@
-local opts = { noremap = true, silent = true }
-vim.keymap.set("n", "<F5>", "<cmd>java run<CR>", opts)
+-- LSP keymaps are set per-buffer in lsp/config.lua (on_attach).
+-- Java compile/run lives on <leader>tr (\tr) in terminal/keys.lua.
