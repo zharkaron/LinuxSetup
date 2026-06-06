@@ -1,10 +1,9 @@
 -- lua/nvim/lint/keys.lua
-local lint = require("lint")
+local run = require("lint.run")
 
--- Keymap to manually run linting
+-- Keymap to manually run linting (warns if the linter tool is missing)
 vim.keymap.set("n", "<leader>l", function()
-  lint.try_lint()
-  vim.notify("Linting done for current buffer", vim.log.levels.INFO)
+  run.lint_buffer()
 end, { desc = "Run linter for current file" })
 
 -- Optional: jump to next/previous lint warning
