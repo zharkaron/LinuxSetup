@@ -92,8 +92,8 @@ return {
   { "hrsh7th/cmp-nvim-lsp", event = "InsertEnter" },
 
   -- DAP
-  { "mfussenegger/nvim-nio", dir = "/home/zharkaron/.LinuxSetup/nvim-nio" },
+  { "nvim-neotest/nvim-nio" },
   { "mfussenegger/nvim-dap" },
-  { "rcarriga/nvim-dap-ui", dependencies = "mfussenegger/nvim-nio" },
+  { "rcarriga/nvim-dap-ui", dependencies = "nvim-neotest/nvim-nio" },
   { "theHamsta/nvim-dap-virtual-text" },
 }

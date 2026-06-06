@@ -10,7 +10,19 @@ The installer currently supports:
 - `dnf`
 - `pacman`
 
-The package list is distro-specific because package names vary between distributions.
+The package list is distro-specific because package names vary between distributions. Package and command mappings live in `installer/packages.sh`, which keeps distro-specific package names separate from the install flow.
+
+## Package Manifest
+
+`installer/packages.sh` defines:
+
+- required packages for each supported package manager
+- optional packages, currently Docker/Compose related
+- command-to-package mappings, such as `rg` to `ripgrep`, `fd` to `fd-find` or `fd`, and Java tools like `java`, `javac`, `mvn`, and `gradle`
+
+The manifest is meant to support future installer preflight checks and an interactive Zsh command-not-found prompt.
+
+Java LSP is also installed automatically now: `install.sh` downloads the upstream `jdtls` wrapper, places it under `/opt/jdtls`, and links `jdtls` into `/usr/local/bin`.
 
 ## Latest App Installs
 

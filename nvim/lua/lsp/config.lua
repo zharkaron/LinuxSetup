@@ -18,24 +18,45 @@ local on_attach = function(client, bufnr)
   vim.keymap.set("n", "<leader>cl", vim.lsp.codelens.run, opts)
 end
 
--- Use a simple LSP config that avoids the deprecated module
-local root_dir = vim.loop.cwd()
-local buf = vim.api.nvim_create_buf(false, true)
+local function find_root(bufnr)
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  local root = vim.fs.root(filename, {
+    "mvnw",
+    "gradlew",
+    "settings.gradle",
+    "settings.gradle.kts",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    ".git",
+  })
 
-local config = {
-  name = "jdtls",
-  cmd = {
-    "python3",
-    vim.fn.stdpath("data") .. "/jdtls/bin/jdtls.py",
-    "-data",
-    vim.fn.getcwd() .. "/.jdtls",
-  },
-  filetypes = { "java" },
-  root_dir = root_dir,
-  settings = {},
-  capabilities = capabilities,
-  on_attach = on_attach,
-}
+  return root or vim.fn.getcwd()
+end
 
--- Start the LSP client using the new API
-vim.lsp.start(config)
+local missing_jdtls_warned = false
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "java",
+  callback = function(args)
+    if vim.fn.executable("jdtls") ~= 1 then
+      if not missing_jdtls_warned then
+        vim.notify("Java LSP disabled: install jdtls and make sure it is on PATH.", vim.log.levels.WARN)
+        missing_jdtls_warned = true
+      end
+      return
+    end
+
+    local root_dir = find_root(args.buf)
+    local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
+    local config_dir = vim.fn.stdpath("cache") .. "/jdtls/config"
+
+    vim.lsp.start({
+      name = "jdtls",
+      cmd = { "jdtls", "-configuration", config_dir, "-data", workspace_dir },
+      root_dir = root_dir,
+      capabilities = capabilities,
+      on_attach = on_attach,
+    }, { bufnr = args.buf })
+  end,
+})

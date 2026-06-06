@@ -15,11 +15,15 @@ fi
 TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 SETUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=installer/packages.sh
+source "$SETUP_DIR/installer/packages.sh"
+
 INSTALLED_PACKAGES=()
 FAILED_PACKAGES=()
 SKIPPED_ITEMS=()
 NEOVIM_CHANNEL="${NEOVIM_CHANNEL:-stable}"
 KITTY_CHANNEL="${KITTY_CHANNEL:-stable}"
+JDTLS_CHANNEL="${JDTLS_CHANNEL:-latest}"
 
 echo "Installing for user: $TARGET_USER"
 echo "Home directory: $TARGET_HOME"
@@ -186,6 +190,94 @@ install_latest_kitty() {
     rm -f "$installer"
 }
 
+java_major_version() {
+    local version_line
+    local version
+    local major
+
+    version_line="$(java -version 2>&1 | head -n 1 || true)"
+    version="$(printf '%s\n' "$version_line" | awk -F'"' '/version/ {print $2}' | head -n 1)"
+
+    if [[ -z "$version" ]]; then
+        echo "0"
+        return
+    fi
+
+    if [[ "$version" == 1.* ]]; then
+        major="${version#1.}"
+        major="${major%%.*}"
+    else
+        major="${version%%.*}"
+    fi
+
+    printf '%s\n' "$major"
+}
+
+install_latest_jdtls() {
+    local tmp_archive
+    local tmp_extract
+    local download_url
+    local jdtls_script
+    local jdtls_root
+    local install_dir="/opt/jdtls"
+    local config_dir="/usr/local/share/jdtls"
+    local java_major
+
+    if command -v jdtls >/dev/null 2>&1; then
+        INSTALLED_PACKAGES+=("jdtls (already on PATH)")
+        return
+    fi
+
+    java_major="$(java_major_version)"
+    if [[ "$java_major" -lt 21 ]]; then
+        echo "Warning: JDTLS requires Java 21 or newer, but java reports $java_major"
+        FAILED_PACKAGES+=("jdtls (requires Java 21+)")
+        return
+    fi
+
+    case "$JDTLS_CHANNEL" in
+        latest|snapshot|snapshots)
+            download_url="https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+            ;;
+        milestone|milestones|stable)
+            download_url="https://download.eclipse.org/jdtls/milestones/1.58.0/jdt-language-server-1.58.0-202604151538.tar.gz"
+            ;;
+        *)
+            echo "Warning: unknown JDTLS_CHANNEL '$JDTLS_CHANNEL', using latest snapshot"
+            download_url="https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+            ;;
+    esac
+
+    tmp_archive="$(mktemp "/tmp/jdtls.XXXXXX.tar.gz")"
+    tmp_extract="$(mktemp -d "/tmp/jdtls.XXXXXX")"
+
+    echo "Installing JDTLS from upstream: $download_url"
+    if curl -fsSL "$download_url" -o "$tmp_archive"; then
+        tar -C "$tmp_extract" -xzf "$tmp_archive"
+
+        jdtls_script="$(find "$tmp_extract" -type f -path '*/bin/jdtls' -print -quit)"
+        if [[ -z "$jdtls_script" ]]; then
+            echo "Warning: JDTLS archive did not contain bin/jdtls"
+            FAILED_PACKAGES+=("jdtls")
+            rm -rf "$tmp_archive" "$tmp_extract"
+            return
+        fi
+
+        jdtls_root="$(dirname "$(dirname "$jdtls_script")")"
+        rm -rf "$install_dir"
+        mkdir -p "$install_dir"
+        cp -a "$jdtls_root"/. "$install_dir"/
+        mkdir -p "$config_dir"
+        ln -sf "$install_dir/bin/jdtls" /usr/local/bin/jdtls
+        INSTALLED_PACKAGES+=("jdtls (${JDTLS_CHANNEL} upstream)")
+    else
+        echo "Warning: failed to download upstream JDTLS"
+        FAILED_PACKAGES+=("jdtls (${JDTLS_CHANNEL} upstream)")
+    fi
+
+    rm -rf "$tmp_archive" "$tmp_extract"
+}
+
 link_dir() {
     local src="$1"
     local dest="$2"
@@ -268,87 +360,26 @@ ensure_shell_is_allowed() {
 if command -v apt >/dev/null 2>&1; then
     PKG_MANAGER="apt"
     PKG_INSTALL_CMD=(apt install -y)
+    load_package_manifest "$PKG_MANAGER"
     apt update
 
-    install_packages \
-        zsh \
-        git \
-        curl \
-        tar \
-        shellcheck \
-        luarocks \
-        build-essential \
-        sshpass \
-        xinput \
-        ripgrep \
-        fd-find \
-        nodejs \
-        npm \
-        python3 \
-        python3-pip \
-        wl-clipboard \
-        xclip
-
-    install_optional_packages "optional Docker/Compose support" \
-        docker.io \
-        docker-compose-plugin \
-        docker-compose
+    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
+    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
 elif command -v dnf >/dev/null 2>&1; then
     PKG_MANAGER="dnf"
     PKG_INSTALL_CMD=(dnf install -y)
+    load_package_manifest "$PKG_MANAGER"
 
-    install_packages \
-        zsh \
-        git \
-        curl \
-        tar \
-        ShellCheck \
-        luarocks \
-        gcc \
-        gcc-c++ \
-        make \
-        sshpass \
-        xinput \
-        ripgrep \
-        fd-find \
-        nodejs \
-        npm \
-        python3 \
-        python3-pip \
-        wl-clipboard \
-        xclip
-
-    install_optional_packages "optional Docker/Compose support; package availability depends on enabled repos" \
-        docker \
-        docker-compose-plugin \
-        docker-compose
+    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
+    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
 elif command -v pacman >/dev/null 2>&1; then
     PKG_MANAGER="pacman"
     PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+    load_package_manifest "$PKG_MANAGER"
     pacman -Sy
 
-    install_packages \
-        zsh \
-        git \
-        curl \
-        tar \
-        shellcheck \
-        luarocks \
-        base-devel \
-        sshpass \
-        xorg-xinput \
-        ripgrep \
-        fd \
-        nodejs \
-        npm \
-        python \
-        python-pip \
-        wl-clipboard \
-        xclip
-
-    install_optional_packages "optional Docker/Compose support" \
-        docker \
-        docker-compose
+    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
+    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
 else
     echo "Unsupported distro: no known package manager found."
     exit 1
@@ -356,6 +387,7 @@ fi
 
 install_latest_neovim
 install_latest_kitty
+install_latest_jdtls
 
 # ---------------------------------------------
 # Create base directories
