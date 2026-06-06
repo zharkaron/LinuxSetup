@@ -25,3 +25,18 @@ source "$ZSH_ROOT/core/prompt.zsh"
 source "$ZSH_ROOT/core/aliases.zsh"
 source "$ZSH_ROOT/core/plugins.zsh"
 export PATH="$HOME/.local/bin:$PATH"
+
+bwuser () {
+  bw get item "$1" | jq -r '.login.username'
+}
+
+bwpass() {
+    bw get item "$1" --session "$BW_SESSION" \
+        | jq -r '.login.password' \
+        | wl-copy
+    echo "Password copied"
+}
+
+bwunlock() {
+    export BW_SESSION=$(NODE_NO_WARNINGS=1 bw unlock --raw )
+}

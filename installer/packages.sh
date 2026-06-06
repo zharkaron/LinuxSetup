@@ -38,6 +38,7 @@ load_package_manifest() {
                 python3
                 python3-pip
                 wl-clipboard
+                bw
                 xclip
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose support"
