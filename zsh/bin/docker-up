@@ -19,6 +19,9 @@ if [ $# -gt 0 ]; then
   exit 1
 fi
 
+# shellcheck disable=SC2029
 ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose stop" || true
+# shellcheck disable=SC2029
 ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose rm -f"
+# shellcheck disable=SC2029
 ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose up --build"

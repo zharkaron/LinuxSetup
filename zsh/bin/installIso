@@ -26,7 +26,7 @@ fi
 
 # === Final confirmation prompt ===
 echo "About to write '$ISO_PATH' to '$DEVICE'"
-read -p "This will erase ALL DATA on $DEVICE. Are you sure? (yes/no): " CONFIRM
+read -r -p "This will erase ALL DATA on $DEVICE. Are you sure? (yes/no): " CONFIRM
 
 if [[ "$CONFIRM" != "yes" ]]; then
   echo "Aborted."
