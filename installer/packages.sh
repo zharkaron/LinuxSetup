@@ -29,6 +29,7 @@ load_package_manifest() {
                 shellcheck
                 luarocks
                 build-essential
+                qutebrowser
                 sshpass
                 xinput
                 ripgrep

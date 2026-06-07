@@ -401,6 +401,11 @@ sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.local/bin"
 link_dir "$SETUP_DIR/kitty" "$TARGET_HOME/.config/kitty"
 
 # ---------------------------------------------
+# Qutebrowser
+# ---------------------------------------------
+link_dir "$SETUP_DIR/qutebrowser" "$TARGET_HOME/.config/qutebrowser"
+
+# ---------------------------------------------
 # Neovim
 # ---------------------------------------------
 link_dir "$SETUP_DIR/nvim" "$TARGET_HOME/.config/nvim"

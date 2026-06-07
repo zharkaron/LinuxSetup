@@ -1,0 +1,46 @@
+:root {
+    color-scheme: dark !important;
+}
+
+html {
+    background-color: #1e1f21 !important;
+}
+
+body {
+    background-color: #1e1f21 !important;
+    color: #c7c7c7 !important;
+}
+
+a {
+    color: #76fff7 !important;
+}
+
+a:visited {
+    color: #88c0d0 !important;
+}
+
+a:hover {
+    color: #a1ff9e !important;
+}
+
+input, textarea, select {
+    background-color: #2b2d30 !important;
+    color: #c7c7c7 !important;
+    border: 1px solid #3c3f41 !important;
+}
+
+button, input[type="button"], input[type="submit"] {
+    background-color: #2b2d30 !important;
+    color: #c7c7c7 !important;
+    border: 1px solid #3c3f41 !important;
+}
+
+pre, code {
+    background-color: #2b2d30 !important;
+    color: #c7c7c7 !important;
+}
+
+::selection {
+    background-color: #4b5668 !important;
+    color: #ffffff !important;
+}
