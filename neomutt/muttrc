@@ -1,0 +1,96 @@
+# =============================================================================
+# NeoMutt main configuration
+# =============================================================================
+#
+# ~/.config/neomutt/muttrc
+#
+# Account-specific configs go in ~/.config/neomutt/accounts/ and are sourced
+# automatically.  Those files are gitignored — do not commit credentials.
+#
+# Local overrides (editor path, mailboxes, etc.) go in
+# ~/.config/neomutt/muttrc.local — also gitignored.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+#  Editor / Pager
+# ---------------------------------------------------------------------------
+set editor = "vim"
+set pager = "builtin"
+set pager_context = 5
+set pager_index_lines = 10
+set pager_stop = yes
+set quit = ask-yes
+
+# ---------------------------------------------------------------------------
+#  Index / Headers
+# ---------------------------------------------------------------------------
+set sort = "reverse-date-received"
+set sort_aux = "reverse-date-received"
+set sort_browser = "reverse-date"
+set index_format = "%4C %Z %{%b %d %Y} %-15.15L (%?l?%4l&%4c?) %s"
+set date_format = "%Y-%m-%d %H:%M"
+set header_cache = "~/.cache/neomutt/headers"
+set message_cachedir = "~/.cache/neomutt/messages"
+set certificate_file = "~/.cache/neomutt/certificates"
+
+# ---------------------------------------------------------------------------
+#  Sidebar
+# ---------------------------------------------------------------------------
+set sidebar_visible = yes
+set sidebar_width = 20
+set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S"
+set sidebar_sort_method = "unsorted"
+bind index,pager \Cp sidebar-prev
+bind index,pager \Cn sidebar-next
+bind index,pager \Co sidebar-open
+
+# ---------------------------------------------------------------------------
+#  Composition
+# ---------------------------------------------------------------------------
+set realname = ""
+set from = ""
+set use_from = yes
+set envelope_from = yes
+set sig_dashes = yes
+set edit_headers = yes
+set fast_reply = yes
+set include = yes
+set forward_format = "Fwd: %s"
+set forward_decode = yes
+set attribution = "On %{%Y-%m-%d %H:%M}, %L wrote:"
+
+# ---------------------------------------------------------------------------
+#  Attachments (mailcap)
+# ---------------------------------------------------------------------------
+set mailcap_path = "~/.config/neomutt/mailcap"
+set print_command = "lpr"
+
+# ---------------------------------------------------------------------------
+#  Notmuch integration
+# ---------------------------------------------------------------------------
+set virtual_spoolfile = yes
+set nm_query_window_timeout = 0
+
+macro index,pager \\ "T~U<enter>;@T<enter>C~/%20<enter>y" "Tag all unread, move to trash"
+
+# ---------------------------------------------------------------------------
+#  GPG
+# ---------------------------------------------------------------------------
+set pgp_default_key = ""
+set pgp_use_gpg_agent = yes
+set crypt_autosign = no
+set crypt_autoencrypt = no
+set crypt_replyencrypt = yes
+set crypt_replysign = yes
+set crypt_opportunistic_encrypt = yes
+source /usr/share/doc/neomutt/examples/gpg.rc
+
+# ---------------------------------------------------------------------------
+#  Account configs  (gitignored — user-provided)
+# ---------------------------------------------------------------------------
+source ~/.config/neomutt/accounts/*.muttrc 2>/dev/null
+
+# ---------------------------------------------------------------------------
+#  Local overrides  (gitignored — user-provided)
+# ---------------------------------------------------------------------------
+source ~/.config/neomutt/muttrc.local 2>/dev/null
