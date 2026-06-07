@@ -23,6 +23,9 @@ EXPECTED_FILES := \
 	zsh/themes/colors.zsh \
 	qutebrowser/config.py \
 	qutebrowser/dark.css \
+	neomutt/muttrc \
+	neomutt/mailcap \
+	neomutt/README.md \
 	README.md \
 	docs/installer.md
 

@@ -23,10 +23,15 @@ declare -gA PKG_COMMAND_MAP=(
     [kitty]="kitty"
     [luarocks]="luarocks"
     [make]="build-essential make base-devel"
+    [mbsync]="isync isync isync"
+    [msmtp]="msmtp msmtp msmtp"
     [mvn]="maven"
+    [neomutt]="neomutt neomutt neomutt"
+    [notmuch]="notmuch notmuch notmuch"
     [node]="nodejs"
     [npm]="npm"
     [nvim]="neovim"
+    [pass]="pass pass pass"
     [pip3]="python3-pip python3-pip python-pip"
     [python3]="python3 python3 python"
     [rg]="ripgrep"
@@ -96,9 +101,10 @@ load_package_manifest() {
                 sshpass xinput ripgrep fd-find nodejs npm
                 python3 python3-pip wl-clipboard xclip
             )
-            PKG_OPTIONAL_REASON="optional Docker/Compose support"
+            PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
                 docker.io docker-compose-plugin docker-compose
+                neomutt isync msmtp notmuch pass
             )
             ;;
         dnf)
@@ -107,9 +113,10 @@ load_package_manifest() {
                 gcc gcc-c++ make sshpass xinput ripgrep fd-find
                 nodejs npm python3 python3-pip wl-clipboard xclip
             )
-            PKG_OPTIONAL_REASON="optional Docker/Compose support; availability depends on enabled repos"
+            PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools; availability depends on enabled repos"
             PKG_OPTIONAL_PACKAGES=(
                 docker docker-compose-plugin docker-compose
+                neomutt isync msmtp notmuch pass
             )
             ;;
         pacman)
@@ -118,9 +125,10 @@ load_package_manifest() {
                 sshpass xorg-xinput ripgrep fd
                 nodejs npm python python-pip wl-clipboard xclip
             )
-            PKG_OPTIONAL_REASON="optional Docker/Compose support"
+            PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
                 docker docker-compose
+                neomutt isync msmtp notmuch pass
             )
             ;;
     esac

@@ -1,0 +1,12 @@
+# mailcap for NeoMutt
+# Associates MIME types with handler programs.
+
+text/plain;                        view %s
+text/html;                         w3m -dump -cols 72 %s; copiousoutput
+application/pdf;                   zathura %s
+image/*;                           sxiv %s; copiousoutput
+audio/*;                           mpv %s
+video/*;                           mpv %s
+
+# Fallback: ask what to do
+application/octet-stream;          xdg-open %s

@@ -6,6 +6,7 @@ This repository currently manages:
 
 - Kitty terminal configuration
 - Neovim configuration built around `lazy.nvim`
+- NeoMutt email client configuration with optional helper tooling
 - Zsh configuration, aliases, helper scripts, and plugin loading
 - A root `install.sh` bootstrap script for installing packages and linking the configs into a user account
 
@@ -15,6 +16,7 @@ This repository currently manages:
 .
 |-- install.sh          # Main Linux installer/bootstrap script
 |-- kitty/              # Kitty terminal config and appearance files
+|-- neomutt/            # NeoMutt mail client config and account templates
 |-- nvim/               # Neovim config, plugins, keymaps, snippets, and help
 `-- zsh/                # Zsh config, aliases, plugin config, themes, and helper scripts
 ```
@@ -49,6 +51,7 @@ Neovim is installed from the official GitHub release archive and Kitty is instal
 It then links the repo configs into the target user account:
 
 - `kitty/` to `~/.config/kitty`
+- `neomutt/` to `~/.config/neomutt`
 - `nvim/` to `~/.config/nvim`
 - `zsh/zshrc` to `~/.zshrc`
 - `zsh/bin` to `~/.local/bin`
@@ -119,6 +122,31 @@ Useful command inside Neovim:
 ```
 
 That opens the Neovim README/keybinding reference.
+
+## NeoMutt
+
+NeoMutt configuration lives in `neomutt/`.
+
+Main file:
+
+- `neomutt/muttrc`
+
+Supporting files:
+
+- `neomutt/mailcap` — MIME type handlers for attachments
+
+Account configs are placed in `neomutt/accounts/`, one `.muttrc` per account. These files are gitignored — you must create them yourself with your own credentials.
+
+Local overrides (editor path, passwords, etc.) go in `neomutt/muttrc.local`, also gitignored.
+
+The installer optionally installs these helper tools when available:
+
+- `mbsync` / `isync` — IMAP → Maildir sync
+- `msmtp` — SMTP client
+- `notmuch` — full-text email search
+- `pass` — password store
+
+See `neomutt/README.md` for account templates and setup instructions.
 
 ## Zsh
 

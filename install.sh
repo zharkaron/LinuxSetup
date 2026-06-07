@@ -618,6 +618,7 @@ section_configs() {
     link_dir "$SETUP_DIR/kitty" "$TARGET_HOME/.config/kitty"
     link_dir "$SETUP_DIR/qutebrowser" "$TARGET_HOME/.config/qutebrowser"
     link_dir "$SETUP_DIR/nvim" "$TARGET_HOME/.config/nvim"
+    link_dir "$SETUP_DIR/neomutt" "$TARGET_HOME/.config/neomutt"
 
     if command -v luarocks >/dev/null 2>&1; then
         if run luarocks install luacheck; then
