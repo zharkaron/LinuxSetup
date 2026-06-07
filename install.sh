@@ -540,6 +540,28 @@ section_detect_distro() {
     fi
 }
 
+check_missing_commands() {
+    local commands=("$@")
+    local cmd pkg missing=()
+
+    for cmd in "${commands[@]}"; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            pkg="$(package_for_command "$cmd")"
+            missing+=("$cmd")
+            if [[ -n "$pkg" ]]; then
+                echo "  $cmd → install package: $pkg"
+            else
+                echo "  $cmd → no package mapping found in manifest"
+            fi
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        return 1
+    fi
+    return 0
+}
+
 section_packages() {
     echo ""
     echo ">>> Section: packages"
@@ -553,6 +575,19 @@ section_packages() {
 
     install_packages "${PKG_REQUIRED_PACKAGES[@]}"
     install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
+
+    echo "Verifying required commands..."
+    # Check only commands that are expected from distro packages (not upstream-installed like nvim, kitty)
+    local check_commands=(
+        zsh git curl tar shellcheck sshpass
+        rg fd python3 pip3 node npm
+        xclip xinput sha256sum awk ssh sudo dd sync
+    )
+    if ! check_missing_commands "${check_commands[@]}"; then
+        echo ""
+        echo "Some required commands are still missing after package installation."
+        echo "You may need to enable additional repositories or install them manually."
+    fi
 }
 
 section_neovim() {
