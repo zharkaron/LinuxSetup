@@ -83,4 +83,4 @@ Remaining installer work is tracked separately:
 
 - make config linking non-destructive
 - add `--dry-run`, `--force`, and skip flags
-- fix the `~/.LinuxSetup` path assumption used by Zsh
+- fix the `~/.LinuxSetup` path assumption used by Zsh ✓ (resolved by dynamic ZSH_ROOT resolution in zshrc)

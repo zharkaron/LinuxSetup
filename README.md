@@ -61,26 +61,6 @@ Where supported, it also:
 
 After installation, log out and back in so shell changes take effect.
 
-## Important Current Assumption
-
-The Zsh config currently expects this repo to be available at:
-
-```text
-~/.LinuxSetup
-```
-
-For example, `zsh/zshrc` sets:
-
-```zsh
-ZSH_ROOT="$HOME/.LinuxSetup/zsh"
-```
-
-Until `install.sh` is improved, clone or link the repo there before relying on the Zsh config:
-
-```bash
-ln -s "$(pwd)" "$HOME/.LinuxSetup"
-```
-
 ## Kitty
 
 Kitty configuration lives in `kitty/`.
@@ -184,7 +164,6 @@ See [docs/installer.md](docs/installer.md) for installer notes and [docs/issues.
 
 Highest priority:
 
-- make `install.sh` create or validate the `~/.LinuxSetup` repo symlink
 - stop deleting existing config directories without backup
 - install all command dependencies used by helper scripts and Neovim plugins
 - add idempotent package/plugin installation

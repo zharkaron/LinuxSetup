@@ -1,7 +1,7 @@
 # PATH
 
-# Root of LinuxSetup ZSH config
-ZSH_ROOT="$HOME/.LinuxSetup/zsh"
+# Root of LinuxSetup ZSH config (resolved dynamically, no hardcoded path)
+ZSH_ROOT="${${(%):-%x}:A:h}"
 
 export PATH="$ZSH_ROOT/bin:$PATH"
 
