@@ -1,4 +1,7 @@
 #!/usr/bin/env zsh
+# khelp – Display the kitty README (keybinding reference).
+#
+# Personal script – assumes kitty README is installed at ~/.config/kitty/README.md.
 
 README="$HOME/.config/kitty/README.md"
 

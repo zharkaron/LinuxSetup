@@ -1,6 +1,21 @@
 #!/bin/bash
+# sshcmd – Run a command on a remote host inside a specific directory.
+#
+# Personal script – the remote host and path are machine-specific.
+#
+# Environment variables (set in zsh/config.zsh):
+#   LINUXSETUP_SSH_HOST   SSH host/alias (default: Server)
+#   LINUXSETUP_SSH_DIR    Remote working directory (default: /home/zhark/docker)
 
-REMOTE_DIR="/home/zhark/docker"
-REMOTE_HOST="Server"   # change to your actual remote host or IP
+set -e
+
+REMOTE_HOST="${LINUXSETUP_SSH_HOST:?Error: LINUXSETUP_SSH_HOST is not set}"
+REMOTE_DIR="${LINUXSETUP_SSH_DIR:?Error: LINUXSETUP_SSH_DIR is not set}"
+
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 <command>"
+  echo "Runs a command on $REMOTE_HOST inside $REMOTE_DIR"
+  exit 1
+fi
 
 ssh "$REMOTE_HOST" bash -c "'cd $REMOTE_DIR && $*'" -- "$@"

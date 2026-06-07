@@ -1,4 +1,9 @@
 #!/usr/bin/env zsh
+# uplugins – Clone or update zsh plugin git repositories.
+#
+# Reusable script – uses env vars with sensible fallbacks.
+#   ZSH_PLUGIN_DIR     Where to clone plugins (default: $ZSH_ROOT/plugins)
+#   ZSH_PLUGIN_LIST    File with git URLs, one per line (default: $ZSH_ROOT/plugins.txt)
 
 SCRIPT_PATH="${0:A}"
 ZSH_ROOT="${ZSH_ROOT:-${SCRIPT_PATH:h:h}}"

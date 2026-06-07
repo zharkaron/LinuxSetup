@@ -1,8 +1,20 @@
 #!/bin/bash
+# bandit – SSH into an OverTheWire Bandit level.  Stores known passwords for
+#          levels 0-5 to skip interactive entry.
+#
+# Reusable script – works on any machine with sshpass installed.
+# Usage: bandit <level>
+#   e.g.  bandit 0   → ssh bandit0@bandit.labs.overthewire.org:2220
 
-# This is a script to ssh into a bandit that i chose without writing it over and over again
+set -e
 
 level=$1
+if [ -z "$level" ]; then
+  echo "Usage: $0 <level>"
+  echo "SSH into an OverTheWire Bandit level."
+  exit 1
+fi
+
 user="bandit$level"
 
 declare -A passwords
@@ -16,7 +28,7 @@ passwords[bandit5]="4oQYVPkxZOOEOO5pTW81FB8j8lxXGUQw"
 xdg-open "https://overthewire.org/wargames/bandit/${user}.html"
 
 if [[ -n "${passwords[$user]}" ]]; then
-  sshpass -p "${passwords[$user]}" ssh -p 2220 ${user}@bandit.labs.overthewire.org
+  sshpass -p "${passwords[$user]}" ssh -p 2220 "${user}@bandit.labs.overthewire.org"
 else
-  ssh -p 2220 ${user}@bandit.labs.overthewire.org
+  ssh -p 2220 "${user}@bandit.labs.overthewire.org"
 fi

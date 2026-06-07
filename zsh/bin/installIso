@@ -1,6 +1,7 @@
 #!/bin/bash
-
-# === installiso: Write ISO to USB using dd ===
+# installiso – Write an ISO to a USB drive using dd.
+#
+# Reusable script – works on any Linux machine with sudo and dd.
 
 ISO_PATH="$1"
 DEVICE="$2"
