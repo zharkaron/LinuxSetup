@@ -427,7 +427,7 @@ ensure_shell_is_allowed() {
 
     echo "Adding $shell_path to /etc/shells"
     if $DRY_RUN; then
-        echo "[DRY-RUN] printf '%s\\n' '$shell_path' >> /etc/shells"
+        printf '%s\n' "[DRY-RUN] printf '%s\\n' '$shell_path' >> /etc/shells"
     else
         printf '%s\n' "$shell_path" >> /etc/shells
     fi
