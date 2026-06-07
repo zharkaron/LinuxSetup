@@ -355,35 +355,119 @@ ensure_shell_is_allowed() {
 }
 
 # ---------------------------------------------
+# Distribution detection
+# ---------------------------------------------
+
+DETECTED_OS_ID=""
+DETECTED_OS_ID_LIKE=""
+DETECTED_OS_VERSION_ID=""
+DETECTED_OS_PRETTY_NAME=""
+
+detect_linux_distro() {
+    if [[ ! -f /etc/os-release ]]; then
+        return 1
+    fi
+    # shellcheck disable=SC1091
+    source /etc/os-release
+    DETECTED_OS_ID="${ID:-}"
+    DETECTED_OS_ID_LIKE="${ID_LIKE:-}"
+    DETECTED_OS_VERSION_ID="${VERSION_ID:-}"
+    DETECTED_OS_PRETTY_NAME="${PRETTY_NAME:-}"
+}
+
+select_package_manager() {
+    local os_id="${1,,}"
+    local os_id_like="${2,,}"
+
+    case "$os_id" in
+        ubuntu|debian|linuxmint|pop|elementary|zorin|kali)
+            PKG_MANAGER="apt"
+            PKG_INSTALL_CMD=(apt install -y)
+            return 0
+            ;;
+        fedora|rhel|centos|rocky|almalinux)
+            PKG_MANAGER="dnf"
+            PKG_INSTALL_CMD=(dnf install -y)
+            return 0
+            ;;
+        arch|archlinux|endeavouros|manjaro|artix)
+            PKG_MANAGER="pacman"
+            PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+            return 0
+            ;;
+    esac
+
+    # Fall back to ID_LIKE
+    case ",${os_id_like}," in
+        *,debian,*)
+            PKG_MANAGER="apt"
+            PKG_INSTALL_CMD=(apt install -y)
+            return 0
+            ;;
+        *,fedora,*|*,rhel,*)
+            PKG_MANAGER="dnf"
+            PKG_INSTALL_CMD=(dnf install -y)
+            return 0
+            ;;
+        *,arch,*)
+            PKG_MANAGER="pacman"
+            PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+# ---------------------------------------------
 # Package manager detection
 # ---------------------------------------------
-if command -v apt >/dev/null 2>&1; then
-    PKG_MANAGER="apt"
-    PKG_INSTALL_CMD=(apt install -y)
-    load_package_manifest "$PKG_MANAGER"
-    apt update
+detect_linux_distro
 
-    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
-    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
-elif command -v dnf >/dev/null 2>&1; then
-    PKG_MANAGER="dnf"
-    PKG_INSTALL_CMD=(dnf install -y)
-    load_package_manifest "$PKG_MANAGER"
-
-    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
-    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
-elif command -v pacman >/dev/null 2>&1; then
-    PKG_MANAGER="pacman"
-    PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
-    load_package_manifest "$PKG_MANAGER"
-    pacman -Sy
-
-    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
-    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
+if [[ -n "$DETECTED_OS_ID" ]]; then
+    if select_package_manager "$DETECTED_OS_ID" "$DETECTED_OS_ID_LIKE"; then
+        echo "Detected distribution: $DETECTED_OS_PRETTY_NAME"
+        echo "Selected package manager: $PKG_MANAGER"
+    else
+        echo "Unsupported Linux distribution" >&2
+        echo "  ID:          ${DETECTED_OS_ID:-unknown}" >&2
+        echo "  ID_LIKE:     ${DETECTED_OS_ID_LIKE:-unknown}" >&2
+        echo "  VERSION_ID:  ${DETECTED_OS_VERSION_ID:-unknown}" >&2
+        echo "  PRETTY_NAME: ${DETECTED_OS_PRETTY_NAME:-unknown}" >&2
+        echo >&2
+        echo "This installer supports Ubuntu/Debian (apt), Fedora/RHEL (dnf), and Arch Linux (pacman) derivatives." >&2
+        echo "To proceed anyway, open an issue at:" >&2
+        echo "  https://github.com/zharkaron/LinuxSetup/issues" >&2
+        exit 1
+    fi
 else
-    echo "Unsupported distro: no known package manager found."
-    exit 1
+    # Fallback: no /etc/os-release, use package manager presence
+    if command -v apt >/dev/null 2>&1; then
+        PKG_MANAGER="apt"
+        PKG_INSTALL_CMD=(apt install -y)
+    elif command -v dnf >/dev/null 2>&1; then
+        PKG_MANAGER="dnf"
+        PKG_INSTALL_CMD=(dnf install -y)
+    elif command -v pacman >/dev/null 2>&1; then
+        PKG_MANAGER="pacman"
+        PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+    else
+        echo "No /etc/os-release found and no known package manager (apt/dnf/pacman) detected." >&2
+        echo "Cannot determine how to install packages." >&2
+        exit 1
+    fi
+    echo "Package manager detected by command availability: $PKG_MANAGER"
 fi
+
+load_package_manifest "$PKG_MANAGER"
+
+case "$PKG_MANAGER" in
+    apt)   apt update ;;
+    pacman) pacman -Sy ;;
+esac
+
+install_packages "${PKG_REQUIRED_PACKAGES[@]}"
+install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
 
 install_latest_neovim
 install_latest_kitty
@@ -454,6 +538,7 @@ fi
 
 echo
 echo "Installation summary"
+echo "Distribution: ${DETECTED_OS_PRETTY_NAME:-detected by command availability}"
 echo "Package manager: $PKG_MANAGER"
 print_list "Installed or already present:" "${INSTALLED_PACKAGES[@]}"
 print_list "Failed or unavailable:" "${FAILED_PACKAGES[@]}"
