@@ -63,6 +63,7 @@ source "$SETUP_DIR/installer/packages.sh"
 INSTALLED_PACKAGES=()
 FAILED_PACKAGES=()
 SKIPPED_ITEMS=()
+BACKED_UP_ITEMS=()
 NEOVIM_CHANNEL="${NEOVIM_CHANNEL:-stable}"
 KITTY_CHANNEL="${KITTY_CHANNEL:-stable}"
 JDTLS_CHANNEL="${JDTLS_CHANNEL:-latest}"
@@ -132,6 +133,37 @@ print_list() {
     for item in "${items[@]}"; do
         echo "  - $item"
     done
+}
+
+backup_existing() {
+    local dest="$1"
+    local src="$2"
+
+    # Nothing exists at dest, caller should create symlink
+    if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+        return 0
+    fi
+
+    # Already a symlink to the correct target, skip
+    if [[ -L "$dest" ]] && [[ "$(readlink "$dest")" == "$src" ]]; then
+        echo "  Already linked, skipping"
+        return 1
+    fi
+
+    # Symlink pointing into this repo, safe to replace
+    if [[ -L "$dest" ]] && [[ "$(readlink "$dest")" == "$SETUP_DIR"* ]]; then
+        echo "  Replacing existing symlink to this repo"
+        run rm -f "$dest"
+        return 0
+    fi
+
+    # Otherwise, back it up
+    local backup_path
+    backup_path="${dest}.backup-$(date '+%Y%m%d-%H%M%S')"
+    echo "  Backing up to $backup_path"
+    run mv "$dest" "$backup_path"
+    BACKED_UP_ITEMS+=("$backup_path")
+    return 0
 }
 
 ensure_user_bin_dir() {
@@ -325,7 +357,7 @@ link_dir() {
     local dest="$2"
 
     echo "Linking $dest -> $src"
-    run rm -rf "$dest"
+    backup_existing "$dest" "$src" || return 0
     run ln -s "$src" "$dest"
     run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
 }
@@ -335,7 +367,7 @@ link_file() {
     local dest="$2"
 
     echo "Linking $dest -> $src"
-    run rm -f "$dest"
+    backup_existing "$dest" "$src" || return 0
     run ln -s "$src" "$dest"
     run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
 }
@@ -352,7 +384,8 @@ link_bin_scripts() {
         [[ -f "$script" ]] || continue
         dest="$dest_dir/$(basename "$script")"
         echo "Linking $dest -> $script"
-        run ln -sf "$script" "$dest"
+        backup_existing "$dest" "$script" || continue
+        run ln -s "$script" "$dest"
         run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
     done
 }
@@ -621,6 +654,7 @@ echo "Package manager: $PKG_MANAGER"
 print_list "Installed or already present:" "${INSTALLED_PACKAGES[@]}"
 print_list "Failed or unavailable:" "${FAILED_PACKAGES[@]}"
 print_list "Skipped:" "${SKIPPED_ITEMS[@]}"
+print_list "Backed up:" "${BACKED_UP_ITEMS[@]}"
 echo
 echo "Installation complete."
 echo "Log out and log back in to finish shell & terminal changes."
