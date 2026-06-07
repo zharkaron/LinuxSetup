@@ -1,6 +1,8 @@
 #!/bin/bash
-
-# Usage: ./check_checksum.sh /path/to/file expected_checksum
+# checkos – Verify a file's SHA256 checksum.
+#
+# Reusable script – works on any Linux machine with sha256sum.
+# Usage: checkos <file> <expected_sha256>
 
 FILE="$1"
 EXPECTED="$2"

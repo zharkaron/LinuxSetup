@@ -5,6 +5,8 @@ ZSH_ROOT="$HOME/.LinuxSetup/zsh"
 
 export PATH="$ZSH_ROOT/bin:$PATH"
 
+source "$ZSH_ROOT/config.zsh"
+
 # History
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=10000

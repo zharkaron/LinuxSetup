@@ -1,6 +1,24 @@
 #!/bin/bash
-set -e 
+# docker-d – Stop, remove, and rebuild (detached) docker containers on a
+#            remote host.
+#
+# Personal script – the remote host and path are machine-specific.
+#
+# Environment variables (set in zsh/config.zsh):
+#   LINUXSETUP_DOCKER_HOST   SSH host/alias (default: mydocker)
+#   LINUXSETUP_DOCKER_DIR    Remote compose directory (default: ~/docker)
 
-ssh mydocker "cd ~/docker && docker-compose stop" || true
-ssh mydocker "cd ~/docker && docker-compose rm -f"
-ssh mydocker "cd ~/docker && docker-compose up --build -d"
+set -e
+
+DOCKER_HOST="${LINUXSETUP_DOCKER_HOST:?Error: LINUXSETUP_DOCKER_HOST is not set}"
+DOCKER_DIR="${LINUXSETUP_DOCKER_DIR:-~/docker}"
+
+if [ $# -gt 0 ]; then
+  echo "Usage: $0"
+  echo "Stops, removes, and rebuilds containers on $DOCKER_HOST in $DOCKER_DIR (detached)"
+  exit 1
+fi
+
+ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose stop" || true
+ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose rm -f"
+ssh "$DOCKER_HOST" "cd $DOCKER_DIR && docker-compose up --build -d"

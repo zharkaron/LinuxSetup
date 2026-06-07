@@ -1,16 +1,40 @@
 #!/bin/bash
+# katmode – Enable or disable the touchscreen via xinput.
+#
+# Personal script – touchscreen device names vary per machine.
+#
+# Environment variables (set in zsh/config.zsh):
+#   LINUXSETUP_KATMODE_DEVICE   xinput device ID or "auto" (default: auto)
 
-DEVICE_ID=9  # Raydium Touch System
+set -e
+
+auto_detect_device() {
+  xinput list --id-only "Raydium Touch System" 2>/dev/null || \
+  xinput list --id-only "Touchscreen"           2>/dev/null || \
+  xinput list --id-only "Touch Screen"          2>/dev/null || \
+  echo ""
+}
+
+if [ "$LINUXSETUP_KATMODE_DEVICE" = "auto" ] || [ -z "${LINUXSETUP_KATMODE_DEVICE+x}" ]; then
+  DEVICE_ID=$(auto_detect_device)
+else
+  DEVICE_ID="$LINUXSETUP_KATMODE_DEVICE"
+fi
+
+if [ -z "$DEVICE_ID" ]; then
+  echo "Error: Could not detect a touchscreen device." >&2
+  echo "Set LINUXSETUP_KATMODE_DEVICE to the xinput device ID." >&2
+  exit 1
+fi
 
 case "$1" in
   enable)
-
     echo "Disabling touchscreen..."
-    xinput disable $DEVICE_ID
+    xinput disable "$DEVICE_ID"
     ;;
   disable)
     echo "Enabling touchscreen..."
-    xinput enable $DEVICE_ID
+    xinput enable "$DEVICE_ID"
     ;;
   *)
     echo "Usage: $0 [enable|disable]"

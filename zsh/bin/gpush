@@ -1,7 +1,8 @@
 #!/bin/bash
-
-# Function to check if the current branch is the main branch
-#Make variable for the branch the script is running on so all the functions can use it
+# gpush – Stage all changes, commit, and push the current branch.
+#
+# Reusable script – works on any git repository.
+# Usage: gpush <commit_message>
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 MainBranch() {
   if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then

@@ -1,5 +1,5 @@
 # Load colors
-source ~/.LinuxSetup/zsh/themes/colors.zsh
+source "$ZSH_ROOT/themes/colors.zsh"
 
 # Distro icons
 typeset -A DISTRO_ICON_MAP=(

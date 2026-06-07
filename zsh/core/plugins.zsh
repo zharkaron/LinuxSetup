@@ -1,7 +1,7 @@
 # ~/.config/zsh/core/plugins.zsh
 # This file loads all Zsh plugins from ~/.config/zsh/plugins/
 
-PLUGIN_DIR="$HOME/.LinuxSetup/zsh/plugins"
+PLUGIN_DIR="$ZSH_ROOT/plugins"
 
 # zsh-autosuggestions
 if [[ -f "$PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then

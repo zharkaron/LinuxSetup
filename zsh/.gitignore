@@ -1,3 +1,4 @@
 plugins/*
+config.local.zsh
 
 !plugins/.gitkeep
