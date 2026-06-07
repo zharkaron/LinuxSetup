@@ -96,6 +96,58 @@ Notes:
 - (n/i) <M-e> (Alt+e / Meta+e) — Trigger fast_wrap from nvim-autopairs
   - defined in: lua/autopairs/keys.lua
 
+## Git (gitsigns) — inline blame, hunks, diff (lua/gitsigns/keys.lua)
+- (n) ]h — Jump to next hunk
+  - defined in: lua/gitsigns/keys.lua
+- (n) [h — Jump to previous hunk
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hs — Stage hunk under cursor
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hr — Reset hunk under cursor
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hu — Undo stage hunk
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hp — Preview hunk diff
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hS — Stage entire buffer
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hR — Reset entire buffer
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hb — Git blame line (inline, eol)
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hB — Git blame full (open in new buffer)
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hd — Git diff this (vs HEAD)
+  - defined in: lua/gitsigns/keys.lua
+- (n) <leader>hD — Git diff this (vs index)
+  - defined in: lua/gitsigns/keys.lua
+
+## Git (Neogit) — status, commit, push, pull, branches (lua/neogit/keys.lua)
+- (n) <leader>gs — Open Neogit status
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gc — Neogit commit (opens commit editor)
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gl — Neogit log
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gp — Git push (blocked on main/master, prompts confirmation)
+  - defined in: lua/neogit/config.lua (NeogitSafePush)
+- (n) <leader>gP — Git force push (blocked on main/master, requires "yes")
+  - defined in: lua/neogit/config.lua (NeogitSafePushForce)
+- (n) <leader>gL — Git pull
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gC — Git checkout (switch branch)
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gm — Git branch management
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gF — Git fetch
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gM — Git merge
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gr — Git rebase
+  - defined in: lua/neogit/keys.lua
+- (n) <leader>gd — Git diff
+  - defined in: lua/neogit/keys.lua
+
 ---
 
 ## How to see where a mapping is defined (inside Neovim)

@@ -1,0 +1,2 @@
+-- lua/neogit/style.lua
+-- Neogit uses tab pages by default; no additional style needed here.

@@ -26,6 +26,7 @@ EXPECTED_FILES := \
 	neomutt/muttrc \
 	neomutt/mailcap \
 	neomutt/README.md \
+	git-hooks/pre-push \
 	README.md \
 	docs/installer.md
 
