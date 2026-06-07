@@ -152,7 +152,7 @@ c.content.notifications.enabled = False
 c.content.proxy = 'system'
 c.content.register_protocol_handler = False
 c.content.webrtc_ip_handling_policy = 'default-public-interface-only'
-c.content.user_stylesheets = ['dark.css']
+#c.content.user_stylesheets = ['dark.css']
 
 config.bind(',b', 'config-source')
 config.bind(',s', 'hint links spawn --detach mpv {hint-url}')
