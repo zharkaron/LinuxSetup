@@ -1,0 +1,2 @@
+-- lua/gitsigns/style.lua
+-- Gitsigns uses the signcolumn; no additional style needed here.

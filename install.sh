@@ -630,6 +630,12 @@ section_configs() {
     else
         SKIPPED_ITEMS+=("luacheck: luarocks is not installed")
     fi
+
+    # Global git hooks
+    local git_hooks_dest="$TARGET_HOME/.config/git-hooks"
+    link_dir "$SETUP_DIR/git-hooks" "$git_hooks_dest"
+    run sudo -u "$TARGET_USER" git config --global core.hooksPath "$git_hooks_dest"
+    INSTALLED_PACKAGES+=("git hooks (global)")
 }
 
 section_zsh() {

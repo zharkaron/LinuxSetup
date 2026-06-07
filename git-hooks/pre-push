@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-push hook: block pushes to protected branches.
+# Install by setting core.hooksPath or copying/symlinking into .git/hooks/.
+set -Eeuo pipefail
+
+PROTECTED_BRANCHES=("main" "master")
+
+# Resolve the branch being pushed (format: "refs/heads/<branch> <sha>" on stdin)
+while read -r _ _ remote_ref _; do
+  # Only care about branch pushes (refs/heads/*), not tag pushes (refs/tags/*)
+  if [[ "$remote_ref" != refs/heads/* ]]; then
+    continue
+  fi
+
+  branch="${remote_ref#refs/heads/}"
+
+  for protected in "${PROTECTED_BRANCHES[@]}"; do
+    if [[ "$branch" == "$protected" ]]; then
+      echo ""
+      echo "  ✋ Blocked: push to '${branch}' is not allowed via pre-push hook."
+      echo "     To push anyway, use:  git push --no-verify origin ${branch}"
+      echo ""
+      exit 1
+    fi
+  done
+done
+
+exit 0

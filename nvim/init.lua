@@ -75,6 +75,15 @@ vim.api.nvim_create_user_command("LoadLSP", function()
 end, {})
 vim.cmd("LoadLSP")
 
+-- Gitsigns
+require("gitsigns.keys")
+require("gitsigns.style")
+
+-- Neogit
+require("config.neogit")
+require("neogit.keys")
+require("neogit.style")
+
 -- DAP
 require("dap.config")
 
