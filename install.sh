@@ -2,11 +2,53 @@
 set -Eeuo pipefail
 
 # ---------------------------------------------
+# Parse CLI flags
+# ---------------------------------------------
+DRY_RUN=false
+FORCE=false
+declare -a SKIP_SECTIONS=()
+ORIGINAL_ARGS=("$@")
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run) DRY_RUN=true; shift ;;
+        --force) FORCE=true; shift ;;
+        --skip-sections)
+            shift
+            IFS=',' read -ra SKIP_SECTIONS <<< "$1"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+set -- "${ORIGINAL_ARGS[@]}"
+
+run() {
+    if $DRY_RUN; then
+        echo "[DRY-RUN] $*"
+    else
+        "$@"
+    fi
+}
+
+section_is_skipped() {
+    local section_name="$1"
+    local s
+    for s in "${SKIP_SECTIONS[@]}"; do
+        [[ "$s" == "$section_name" ]] && return 0
+    done
+    return 1
+}
+
+# ---------------------------------------------
 # Re-run as root if needed
 # ---------------------------------------------
 if [[ $EUID -ne 0 ]]; then
     echo "Re-running installer as root..."
-    exec sudo "$0" "$@"
+    exec sudo "$0" "${ORIGINAL_ARGS[@]}"
 fi
 
 # ---------------------------------------------
@@ -36,7 +78,7 @@ install_package() {
     local package="$1"
 
     echo "Installing package: $package"
-    if "${PKG_INSTALL_CMD[@]}" "$package"; then
+    if run "${PKG_INSTALL_CMD[@]}" "$package"; then
         INSTALLED_PACKAGES+=("$package")
     else
         echo "Warning: failed to install package: $package"
@@ -49,7 +91,7 @@ install_optional_package() {
     local reason="$2"
 
     echo "Installing optional package: $package"
-    if "${PKG_INSTALL_CMD[@]}" "$package"; then
+    if run "${PKG_INSTALL_CMD[@]}" "$package"; then
         INSTALLED_PACKAGES+=("$package")
     else
         echo "Warning: optional package unavailable: $package"
@@ -97,10 +139,10 @@ ensure_user_bin_dir() {
 
     if [[ -L "$bin_dir" ]]; then
         echo "Replacing symlinked $bin_dir with a real directory"
-        rm -f "$bin_dir"
+        run rm -f "$bin_dir"
     fi
 
-    sudo -u "$TARGET_USER" mkdir -p "$bin_dir"
+    run sudo -u "$TARGET_USER" mkdir -p "$bin_dir"
 }
 
 install_latest_neovim() {
@@ -136,17 +178,17 @@ install_latest_neovim() {
     tmp_archive="$(mktemp "/tmp/${archive_name}.XXXXXX")"
 
     echo "Installing latest Neovim from upstream: $download_url"
-    if curl -fsSL "$download_url" -o "$tmp_archive"; then
-        rm -rf "$install_dir"
-        tar -C /opt -xzf "$tmp_archive"
-        ln -sf "$install_dir/bin/nvim" /usr/local/bin/nvim
+    if run curl -fsSL "$download_url" -o "$tmp_archive"; then
+        run rm -rf "$install_dir"
+        run tar -C /opt -xzf "$tmp_archive"
+        run ln -sf "$install_dir/bin/nvim" /usr/local/bin/nvim
         INSTALLED_PACKAGES+=("neovim (${NEOVIM_CHANNEL} upstream)")
     else
         echo "Warning: failed to download upstream Neovim"
         FAILED_PACKAGES+=("neovim (${NEOVIM_CHANNEL} upstream)")
     fi
 
-    rm -f "$tmp_archive"
+    run rm -f "$tmp_archive"
 }
 
 install_latest_kitty() {
@@ -163,20 +205,20 @@ install_latest_kitty() {
     fi
 
     echo "Installing latest Kitty from upstream installer"
-    if curl -fsSL "https://sw.kovidgoyal.net/kitty/installer.sh" -o "$installer"; then
-        chmod 755 "$installer"
-        sudo -u "$TARGET_USER" HOME="$TARGET_HOME" sh "$installer" "${kitty_args[@]}"
+    if run curl -fsSL "https://sw.kovidgoyal.net/kitty/installer.sh" -o "$installer"; then
+        run chmod 755 "$installer"
+        run sudo -u "$TARGET_USER" HOME="$TARGET_HOME" sh "$installer" "${kitty_args[@]}"
 
         kitty_bin="$TARGET_HOME/.local/kitty.app/bin/kitty"
         kitten_bin="$TARGET_HOME/.local/kitty.app/bin/kitten"
 
         if [[ -x "$kitty_bin" ]]; then
             ensure_user_bin_dir
-            ln -sf "$kitty_bin" "$TARGET_HOME/.local/bin/kitty"
-            ln -sf "$kitten_bin" "$TARGET_HOME/.local/bin/kitten"
-            ln -sf "$kitty_bin" /usr/local/bin/kitty
-            ln -sf "$kitten_bin" /usr/local/bin/kitten
-            chown -h "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local/bin/kitty" "$TARGET_HOME/.local/bin/kitten"
+            run ln -sf "$kitty_bin" "$TARGET_HOME/.local/bin/kitty"
+            run ln -sf "$kitten_bin" "$TARGET_HOME/.local/bin/kitten"
+            run ln -sf "$kitty_bin" /usr/local/bin/kitty
+            run ln -sf "$kitten_bin" /usr/local/bin/kitten
+            run chown -h "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local/bin/kitty" "$TARGET_HOME/.local/bin/kitten"
             INSTALLED_PACKAGES+=("kitty (${KITTY_CHANNEL} upstream)")
         else
             echo "Warning: Kitty installer finished, but kitty binary was not found"
@@ -187,7 +229,7 @@ install_latest_kitty() {
         FAILED_PACKAGES+=("kitty (${KITTY_CHANNEL} upstream)")
     fi
 
-    rm -f "$installer"
+    run rm -f "$installer"
 }
 
 java_major_version() {
@@ -223,7 +265,7 @@ install_latest_jdtls() {
     local config_dir="/usr/local/share/jdtls"
     local java_major
 
-    if command -v jdtls >/dev/null 2>&1; then
+    if ! $FORCE && command -v jdtls >/dev/null 2>&1; then
         INSTALLED_PACKAGES+=("jdtls (already on PATH)")
         return
     fi
@@ -252,30 +294,30 @@ install_latest_jdtls() {
     tmp_extract="$(mktemp -d "/tmp/jdtls.XXXXXX")"
 
     echo "Installing JDTLS from upstream: $download_url"
-    if curl -fsSL "$download_url" -o "$tmp_archive"; then
-        tar -C "$tmp_extract" -xzf "$tmp_archive"
+    if run curl -fsSL "$download_url" -o "$tmp_archive"; then
+        run tar -C "$tmp_extract" -xzf "$tmp_archive"
 
         jdtls_script="$(find "$tmp_extract" -type f -path '*/bin/jdtls' -print -quit)"
         if [[ -z "$jdtls_script" ]]; then
             echo "Warning: JDTLS archive did not contain bin/jdtls"
             FAILED_PACKAGES+=("jdtls")
-            rm -rf "$tmp_archive" "$tmp_extract"
+            run rm -rf "$tmp_archive" "$tmp_extract"
             return
         fi
 
         jdtls_root="$(dirname "$(dirname "$jdtls_script")")"
-        rm -rf "$install_dir"
-        mkdir -p "$install_dir"
-        cp -a "$jdtls_root"/. "$install_dir"/
-        mkdir -p "$config_dir"
-        ln -sf "$install_dir/bin/jdtls" /usr/local/bin/jdtls
+        run rm -rf "$install_dir"
+        run mkdir -p "$install_dir"
+        run cp -a "$jdtls_root"/. "$install_dir"/
+        run mkdir -p "$config_dir"
+        run ln -sf "$install_dir/bin/jdtls" /usr/local/bin/jdtls
         INSTALLED_PACKAGES+=("jdtls (${JDTLS_CHANNEL} upstream)")
     else
         echo "Warning: failed to download upstream JDTLS"
         FAILED_PACKAGES+=("jdtls (${JDTLS_CHANNEL} upstream)")
     fi
 
-    rm -rf "$tmp_archive" "$tmp_extract"
+    run rm -rf "$tmp_archive" "$tmp_extract"
 }
 
 link_dir() {
@@ -283,9 +325,9 @@ link_dir() {
     local dest="$2"
 
     echo "Linking $dest -> $src"
-    rm -rf "$dest"
-    ln -s "$src" "$dest"
-    chown -h "$TARGET_USER:$TARGET_USER" "$dest"
+    run rm -rf "$dest"
+    run ln -s "$src" "$dest"
+    run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
 }
 
 link_file() {
@@ -293,9 +335,9 @@ link_file() {
     local dest="$2"
 
     echo "Linking $dest -> $src"
-    rm -f "$dest"
-    ln -s "$src" "$dest"
-    chown -h "$TARGET_USER:$TARGET_USER" "$dest"
+    run rm -f "$dest"
+    run ln -s "$src" "$dest"
+    run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
 }
 
 link_bin_scripts() {
@@ -310,8 +352,8 @@ link_bin_scripts() {
         [[ -f "$script" ]] || continue
         dest="$dest_dir/$(basename "$script")"
         echo "Linking $dest -> $script"
-        ln -sf "$script" "$dest"
-        chown -h "$TARGET_USER:$TARGET_USER" "$dest"
+        run ln -sf "$script" "$dest"
+        run chown -h "$TARGET_USER:$TARGET_USER" "$dest"
     done
 }
 
@@ -325,7 +367,7 @@ install_zsh_plugins() {
     fi
 
     echo "Installing/updating Zsh plugins"
-    if sudo -u "$TARGET_USER" HOME="$TARGET_HOME" ZSH_ROOT="$SETUP_DIR/zsh" "$updater"; then
+    if run sudo -u "$TARGET_USER" HOME="$TARGET_HOME" ZSH_ROOT="$SETUP_DIR/zsh" "$updater"; then
         INSTALLED_PACKAGES+=("zsh plugins")
     else
         echo "Warning: failed to install/update Zsh plugins"
@@ -351,7 +393,11 @@ ensure_shell_is_allowed() {
     fi
 
     echo "Adding $shell_path to /etc/shells"
-    printf '%s\n' "$shell_path" >> /etc/shells
+    if $DRY_RUN; then
+        echo "[DRY-RUN] printf '%s\\n' '$shell_path' >> /etc/shells"
+    else
+        printf '%s\n' "$shell_path" >> /etc/shells
+    fi
 }
 
 # ---------------------------------------------
@@ -420,121 +466,153 @@ select_package_manager() {
 }
 
 # ---------------------------------------------
-# Package manager detection
+# Section functions
 # ---------------------------------------------
-detect_linux_distro
 
-if [[ -n "$DETECTED_OS_ID" ]]; then
-    if select_package_manager "$DETECTED_OS_ID" "$DETECTED_OS_ID_LIKE"; then
-        echo "Detected distribution: $DETECTED_OS_PRETTY_NAME"
-        echo "Selected package manager: $PKG_MANAGER"
+section_detect_distro() {
+    detect_linux_distro
+
+    if [[ -n "$DETECTED_OS_ID" ]]; then
+        if select_package_manager "$DETECTED_OS_ID" "$DETECTED_OS_ID_LIKE"; then
+            echo "Detected distribution: $DETECTED_OS_PRETTY_NAME"
+            echo "Selected package manager: $PKG_MANAGER"
+        else
+            echo "Unsupported Linux distribution" >&2
+            echo "  ID:          ${DETECTED_OS_ID:-unknown}" >&2
+            echo "  ID_LIKE:     ${DETECTED_OS_ID_LIKE:-unknown}" >&2
+            echo "  VERSION_ID:  ${DETECTED_OS_VERSION_ID:-unknown}" >&2
+            echo "  PRETTY_NAME: ${DETECTED_OS_PRETTY_NAME:-unknown}" >&2
+            echo >&2
+            echo "This installer supports Ubuntu/Debian (apt), Fedora/RHEL (dnf), and Arch Linux (pacman) derivatives." >&2
+            echo "To proceed anyway, open an issue at:" >&2
+            echo "  https://github.com/zharkaron/LinuxSetup/issues" >&2
+            exit 1
+        fi
     else
-        echo "Unsupported Linux distribution" >&2
-        echo "  ID:          ${DETECTED_OS_ID:-unknown}" >&2
-        echo "  ID_LIKE:     ${DETECTED_OS_ID_LIKE:-unknown}" >&2
-        echo "  VERSION_ID:  ${DETECTED_OS_VERSION_ID:-unknown}" >&2
-        echo "  PRETTY_NAME: ${DETECTED_OS_PRETTY_NAME:-unknown}" >&2
-        echo >&2
-        echo "This installer supports Ubuntu/Debian (apt), Fedora/RHEL (dnf), and Arch Linux (pacman) derivatives." >&2
-        echo "To proceed anyway, open an issue at:" >&2
-        echo "  https://github.com/zharkaron/LinuxSetup/issues" >&2
-        exit 1
+        if command -v apt >/dev/null 2>&1; then
+            PKG_MANAGER="apt"
+            PKG_INSTALL_CMD=(apt install -y)
+        elif command -v dnf >/dev/null 2>&1; then
+            PKG_MANAGER="dnf"
+            PKG_INSTALL_CMD=(dnf install -y)
+        elif command -v pacman >/dev/null 2>&1; then
+            PKG_MANAGER="pacman"
+            PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+        else
+            echo "No /etc/os-release found and no known package manager (apt/dnf/pacman) detected." >&2
+            echo "Cannot determine how to install packages." >&2
+            exit 1
+        fi
+        echo "Package manager detected by command availability: $PKG_MANAGER"
     fi
-else
-    # Fallback: no /etc/os-release, use package manager presence
-    if command -v apt >/dev/null 2>&1; then
-        PKG_MANAGER="apt"
-        PKG_INSTALL_CMD=(apt install -y)
-    elif command -v dnf >/dev/null 2>&1; then
-        PKG_MANAGER="dnf"
-        PKG_INSTALL_CMD=(dnf install -y)
-    elif command -v pacman >/dev/null 2>&1; then
-        PKG_MANAGER="pacman"
-        PKG_INSTALL_CMD=(pacman -S --needed --noconfirm)
+}
+
+section_packages() {
+    echo ""
+    echo ">>> Section: packages"
+
+    load_package_manifest "$PKG_MANAGER"
+
+    case "$PKG_MANAGER" in
+        apt)   run apt update ;;
+        pacman) run pacman -Sy ;;
+    esac
+
+    install_packages "${PKG_REQUIRED_PACKAGES[@]}"
+    install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
+}
+
+section_neovim() {
+    echo ""
+    echo ">>> Section: neovim"
+    install_latest_neovim
+}
+
+section_kitty() {
+    echo ""
+    echo ">>> Section: kitty"
+    install_latest_kitty
+}
+
+section_jdtls() {
+    echo ""
+    echo ">>> Section: jdtls"
+    install_latest_jdtls
+}
+
+section_configs() {
+    echo ""
+    echo ">>> Section: configs"
+
+    run sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config"
+    run sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.local/bin"
+
+    link_dir "$SETUP_DIR/kitty" "$TARGET_HOME/.config/kitty"
+    link_dir "$SETUP_DIR/qutebrowser" "$TARGET_HOME/.config/qutebrowser"
+    link_dir "$SETUP_DIR/nvim" "$TARGET_HOME/.config/nvim"
+
+    if command -v luarocks >/dev/null 2>&1; then
+        if run luarocks install luacheck; then
+            INSTALLED_PACKAGES+=("luacheck")
+        else
+            echo "Warning: failed to install luacheck with luarocks"
+            FAILED_PACKAGES+=("luacheck")
+        fi
     else
-        echo "No /etc/os-release found and no known package manager (apt/dnf/pacman) detected." >&2
-        echo "Cannot determine how to install packages." >&2
-        exit 1
+        SKIPPED_ITEMS+=("luacheck: luarocks is not installed")
     fi
-    echo "Package manager detected by command availability: $PKG_MANAGER"
-fi
+}
 
-load_package_manifest "$PKG_MANAGER"
+section_zsh() {
+    echo ""
+    echo ">>> Section: zsh"
 
-case "$PKG_MANAGER" in
-    apt)   apt update ;;
-    pacman) pacman -Sy ;;
-esac
+    link_file "$SETUP_DIR/zsh/zshrc" "$TARGET_HOME/.zshrc"
+    link_bin_scripts "$SETUP_DIR/zsh/bin" "$TARGET_HOME/.local/bin"
+    install_zsh_plugins
+}
 
-install_packages "${PKG_REQUIRED_PACKAGES[@]}"
-install_optional_packages "$PKG_OPTIONAL_REASON" "${PKG_OPTIONAL_PACKAGES[@]}"
+section_terminal() {
+    echo ""
+    echo ">>> Section: terminal"
 
-install_latest_neovim
-install_latest_kitty
-install_latest_jdtls
+    if command -v update-alternatives >/dev/null 2>&1; then
+        run update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/local/bin/kitty 50
+        run update-alternatives --set x-terminal-emulator /usr/local/bin/kitty
+    fi
 
-# ---------------------------------------------
-# Create base directories
-# ---------------------------------------------
-sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config"
-sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.local/bin"
-
-# ---------------------------------------------
-# Kitty
-# ---------------------------------------------
-link_dir "$SETUP_DIR/kitty" "$TARGET_HOME/.config/kitty"
-
-# ---------------------------------------------
-# Qutebrowser
-# ---------------------------------------------
-link_dir "$SETUP_DIR/qutebrowser" "$TARGET_HOME/.config/qutebrowser"
-
-# ---------------------------------------------
-# Neovim
-# ---------------------------------------------
-link_dir "$SETUP_DIR/nvim" "$TARGET_HOME/.config/nvim"
-
-if command -v luarocks >/dev/null 2>&1; then
-    if luarocks install luacheck; then
-        INSTALLED_PACKAGES+=("luacheck")
+    if command -v gsettings >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" && -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+        run sudo -u "$TARGET_USER" gsettings set \
+            org.gnome.desktop.default-applications.terminal exec kitty || true
     else
-        echo "Warning: failed to install luacheck with luarocks"
-        FAILED_PACKAGES+=("luacheck")
+        SKIPPED_ITEMS+=("GNOME terminal default: no graphical D-Bus session")
     fi
-else
-    SKIPPED_ITEMS+=("luacheck: luarocks is not installed")
-fi
+}
+
+section_shell() {
+    echo ""
+    echo ">>> Section: shell"
+
+    if command -v zsh >/dev/null 2>&1; then
+        ZSH_PATH="$(get_zsh_path)"
+        ensure_shell_is_allowed "$ZSH_PATH"
+        run chsh -s "$ZSH_PATH" "$TARGET_USER"
+    fi
+}
 
 # ---------------------------------------------
-# Zsh
+# Run sections
 # ---------------------------------------------
-link_file "$SETUP_DIR/zsh/zshrc" "$TARGET_HOME/.zshrc"
-link_bin_scripts "$SETUP_DIR/zsh/bin" "$TARGET_HOME/.local/bin"
-install_zsh_plugins
+section_detect_distro
 
-# ---------------------------------------------
-# Set kitty as default terminal (where supported)
-# ---------------------------------------------
-if command -v update-alternatives >/dev/null 2>&1; then
-    update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/local/bin/kitty 50
-    update-alternatives --set x-terminal-emulator /usr/local/bin/kitty
-fi
-
-if command -v gsettings >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" && -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
-    sudo -u "$TARGET_USER" gsettings set \
-        org.gnome.desktop.default-applications.terminal exec kitty || true
-else
-    SKIPPED_ITEMS+=("GNOME terminal default: no graphical D-Bus session")
-fi
-
-# ---------------------------------------------
-# Set zsh as default shell
-# ---------------------------------------------
-if command -v zsh >/dev/null 2>&1; then
-    ZSH_PATH="$(get_zsh_path)"
-    ensure_shell_is_allowed "$ZSH_PATH"
-    chsh -s "$ZSH_PATH" "$TARGET_USER"
-fi
+section_is_skipped "packages" || section_packages
+section_is_skipped "neovim"   || section_neovim
+section_is_skipped "kitty"    || section_kitty
+section_is_skipped "jdtls"    || section_jdtls
+section_is_skipped "configs"  || section_configs
+section_is_skipped "zsh"      || section_zsh
+section_is_skipped "terminal" || section_terminal
+section_is_skipped "shell"    || section_shell
 
 echo
 echo "Installation summary"
