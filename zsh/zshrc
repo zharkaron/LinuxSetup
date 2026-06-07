@@ -23,6 +23,7 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 # Load core files
 source "$ZSH_ROOT/core/prompt.zsh"
 source "$ZSH_ROOT/core/aliases.zsh"
+source "$ZSH_ROOT/core/command-not-found.zsh"
 source "$ZSH_ROOT/core/plugins.zsh"
 export PATH="$HOME/.local/bin:$PATH"
 
