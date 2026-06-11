@@ -68,6 +68,28 @@ change the model to anything you've pulled (`ollama list`).
 - (n,v) <leader>ca  — Open the AI action palette
   - defined in: lua/ai/keys.lua
 
+## Inline AI assistant (lua/inlineai/keys.lua)
+Ghost-text code completion in **any** file (like an inline coding assistant), powered by the same
+localhost model ([minuet-ai.nvim](https://github.com/milanglacier/minuet-ai.nvim) →
+Ollama `qwen2.5-coder:7b`, fill-in-the-middle). Uses the same `ollama serve` setup
+as the chat above; endpoint/model live in `lua/inlineai/config.lua`. It auto-suggests
+as you type in every filetype — toggle it off whenever you don't want it.
+
+- (i) <C-e>  — Accept the current suggestion (insert mode)
+  - defined in: lua/inlineai/config.lua (minuet virtualtext keymap)
+- (i) <A-a>  — Accept one line of the suggestion
+  - defined in: lua/inlineai/config.lua
+- (i) <A-]> / <A-[>  — Cycle suggestions / manually request one
+  - defined in: lua/inlineai/config.lua
+- (i) <A-e>  — Dismiss the current suggestion
+  - defined in: lua/inlineai/config.lua
+- (n) <leader>ai  — Toggle the inline assistant on/off
+  - defined in: lua/inlineai/keys.lua
+- (n) <C-e>  — Enable the inline assistant
+  - defined in: lua/inlineai/keys.lua
+- (n) <C-d>  — Disable the inline assistant
+  - defined in: lua/inlineai/keys.lua
+
 ## Treesitter (selection, textobjects, folds) (lua/treesitter/keys.lua)
 - Incremental selection keymaps (Treesitter):
   - (n) gnn — init_selection
