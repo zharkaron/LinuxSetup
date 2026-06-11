@@ -57,6 +57,11 @@ require("ai.config")
 require("ai.style")
 require("ai.keys")
 
+-- Inline AI assistant (local model ghost-text completion via minuet-ai)
+require("inlineai.config")
+require("inlineai.style")
+require("inlineai.keys")
+
 -- terminal
 require("terminal.config")
 require("terminal.style")

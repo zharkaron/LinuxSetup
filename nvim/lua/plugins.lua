@@ -51,6 +51,9 @@ return {
     },
   },
 
+  -- Inline AI completion (ghost text via the same localhost / Ollama model)
+  { "milanglacier/minuet-ai.nvim" },
+
   -- ToggleTerm
   {
     "akinsho/toggleterm.nvim",
