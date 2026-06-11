@@ -41,13 +41,14 @@ return {
   -- Lint
   { "mfussenegger/nvim-lint" },
 
-  -- Copilot
-  { "github/copilot.vim" },
-
-  -- Copilot Chat
+  -- AI chat (local model via codecompanion.nvim, backed by localhost / Ollama)
   {
-    "CopilotC-Nvim/CopilotChat.nvim",
-    dependencies = { "github/copilot.vim", "nvim-lua/plenary.nvim" },
+    "olimorris/codecompanion.nvim",
+    version = "^19.15.0",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-treesitter/nvim-treesitter",
+    },
   },
 
   -- ToggleTerm

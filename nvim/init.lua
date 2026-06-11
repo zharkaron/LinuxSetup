@@ -28,6 +28,7 @@ require("nvim.keys")
 -- Load plugin-specific modular configs
 
 -- treesitter
+require("treesitter.compat") -- Neovim 0.12 / master-branch predicate shim (load before any parse)
 require("treesitter.config")
 require("treesitter.style")
 require("treesitter.keys")
@@ -51,15 +52,10 @@ require("lint.config")
 require("lint.style")
 require("lint.keys")
 
--- Copilot
-require("copilot.config")
-require("copilot.style")
-require("copilot.keys")
-
--- CopilotChat
-require("copilotchat.config")
-require("copilotchat.style")
-require("copilotchat.keys")
+-- AI chat (local model via codecompanion.nvim)
+require("ai.config")
+require("ai.style")
+require("ai.keys")
 
 -- terminal
 require("terminal.config")

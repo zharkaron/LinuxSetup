@@ -43,25 +43,30 @@ Notes:
 - (n) <leader>tb — Open a floating terminal in the current buffer's directory
   - defined in: lua/terminal/keys.lua
 
-## Copilot (lua/copilot/keys.lua)
-- (i) <C-e> — Accept Copilot suggestion (insert mode; uses copilot#Accept)
-  - defined in: lua/copilot/keys.lua
-- (n) <C-e> — Enable Copilot
-  - defined in: lua/copilot/keys.lua
-- (n) <C-d> — Disable Copilot
-  - defined in: lua/copilot/keys.lua
+## AI Chat (lua/ai/keys.lua)
+Local AI chat powered by [codecompanion.nvim](https://github.com/olimorris/codecompanion.nvim),
+talking to a model served on **localhost** — no external AI account required.
 
-## Copilot Chat (lua/copilotchat/keys.lua)
-- (n) <leader>c   — Open Copilot Chat
-  - defined in: lua/copilotchat/keys.lua
-- (n) <leader>cf  — CopilotChatFix #buffer (fix code)
-  - defined in: lua/copilotchat/keys.lua
-- (n) <leader>ce  — CopilotChatExplain #buffer (explain code)
-  - defined in: lua/copilotchat/keys.lua
-- (n) <leader>cr  — CopilotChatReview #buffer (review code)
-  - defined in: lua/copilotchat/keys.lua
-- (n) <leader>ca  — Insert #file context commands for all open files at cursor
-  - defined in: lua/copilotchat/keys.lua
+Setup (one-time): run a local OpenAI-compatible server before using the chat. With
+[Ollama](https://ollama.com):
+```sh
+ollama serve            # serves an API on http://localhost:11434
+ollama pull qwen2.5-coder
+```
+The endpoint and model are configured in `lua/ai/config.lua`
+(`env.url = "http://localhost:11434"`, `schema.model.default = "qwen2.5-coder:7b"`) —
+change the model to anything you've pulled (`ollama list`).
+
+- (n,v) <leader>c   — Toggle the AI chat window
+  - defined in: lua/ai/keys.lua
+- (n) <leader>cf  — Fix the current buffer (answered in chat)
+  - defined in: lua/ai/keys.lua
+- (n) <leader>ce  — Explain the current buffer (answered in chat)
+  - defined in: lua/ai/keys.lua
+- (n) <leader>cr  — Review the current buffer (answered in chat)
+  - defined in: lua/ai/keys.lua
+- (n,v) <leader>ca  — Open the AI action palette
+  - defined in: lua/ai/keys.lua
 
 ## Treesitter (selection, textobjects, folds) (lua/treesitter/keys.lua)
 - Incremental selection keymaps (Treesitter):
