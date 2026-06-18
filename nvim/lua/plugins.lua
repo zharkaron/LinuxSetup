@@ -86,6 +86,9 @@ return {
   { "williamboman/mason.nvim" },
   { "williamboman/mason-lspconfig.nvim", dependencies = "mason.nvim" },
 
+  -- Flash (enhanced f/t motions and search)
+  { "folke/flash.nvim", opts = {} },
+
   -- Conform (auto-format on save)
   {
     "stevearc/conform.nvim",

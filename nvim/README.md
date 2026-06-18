@@ -175,6 +175,44 @@ as you type in every filetype — toggle it off whenever you don't want it.
 - (n) <leader>gd — Git diff
   - defined in: lua/neogit/keys.lua
 
+## Which-key (plugin: `folke/which-key.nvim`)
+Press `<leader>` and wait ~300ms — a popup shows every keymap that starts with `<leader>`, grouped by prefix. No extra mappings needed, it reads the `desc` from all `vim.keymap.set` calls.
+
+- Defined in: `lua/plugins.lua`
+
+## Mason (`williamboman/mason.nvim`)
+LSP server / formatter / linter installer.
+
+- `:Mason` — open the graphical installer
+- `:LspInstall <server>` — install a language server
+- Defined in: `lua/mason/config.lua`
+
+## Conform (`stevearc/conform.nvim`) — auto-format on save
+Formats the buffer automatically whenever you `:w`. Uses the formatter listed for each filetype; falls back to LSP formatting if the external tool is missing.
+
+| Filetype | Formatter | Install via `:Mason` |
+|---|---|---|
+| lua | `stylua` | `stylua` |
+| python | `ruff_format` | `ruff` |
+| java | `google-java-format` | `google-java-format` |
+| sh | `shfmt` | `shfmt` |
+| html / markdown | `prettier` / `prettierd` | `prettier` |
+
+- (n) `<leader>F` — Format buffer manually (also in visual mode)
+- Defined in: `lua/plugins.lua`
+
+Test files: `nvim /tmp/test-conform/messy.java` (and `.py`, `.sh`, `.html`)
+
+## Flash (`folke/flash.nvim`) — enhanced motion
+Type `s` then any character → labels appear on every match. Type the label to jump there.
+
+- (n,x,o) `s` — Jump to any visible character (label jump)
+- (n,x,o) `S` — Jump to a treesitter node (function, class, etc.)
+- (n,x,o) `r` — Remote jump: jump there, then jump back
+- Defined in: `lua/flash/keys.lua`
+
+Test files: `nvim /tmp/test-flash/demo.py` (and `.java`, `.sh`)
+
 ---
 
 ## How to see where a mapping is defined (inside Neovim)

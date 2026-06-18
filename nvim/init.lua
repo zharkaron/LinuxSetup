@@ -47,6 +47,9 @@ require("autopairs.keys")
 -- Snippets
 require("snippets.config")
 
+-- Flash (enhanced motions)
+require("flash.keys")
+
 -- lint
 require("lint.config")
 require("lint.style")
