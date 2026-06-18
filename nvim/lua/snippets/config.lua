@@ -2,6 +2,7 @@ local ls = require("luasnip")
 require("snippets.bash")
 require("snippets.html")
 require("snippets.python")
+require("snippets.java")
 
 -- Keymaps for expanding/jumping snippets safely
 vim.keymap.set({"i", "s"}, "<Tab>", function()
@@ -52,6 +53,18 @@ vim.api.nvim_create_autocmd("BufNewFile", {
     callback = function()
         local ls = require("luasnip")
         local snippets = ls.get_snippets("python")
+        if snippets and #snippets > 0 then
+            ls.snip_expand(snippets[1])
+        end
+    end,
+})
+
+-- Auto-expand for Java files
+vim.api.nvim_create_autocmd("BufNewFile", {
+    pattern = "*.java",
+    callback = function()
+        local ls = require("luasnip")
+        local snippets = ls.get_snippets("java")
         if snippets and #snippets > 0 then
             ls.snip_expand(snippets[1])
         end
