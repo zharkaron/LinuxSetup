@@ -67,6 +67,9 @@ require("terminal.config")
 require("terminal.style")
 require("terminal.keys")
 
+-- Mason (LSP/formatter/linter installer)
+require("mason.config")
+
 -- LSP
 -- Using a command to defer loading until plugins are ready
 vim.api.nvim_create_user_command("LoadLSP", function()

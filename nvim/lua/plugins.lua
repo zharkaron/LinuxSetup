@@ -82,6 +82,10 @@ return {
   -- Which-key (help discover keymaps)
   { "folke/which-key.nvim", opts = {} },
 
+  -- Mason (LSP/formatter/linter installer)
+  { "williamboman/mason.nvim" },
+  { "williamboman/mason-lspconfig.nvim", dependencies = "mason.nvim" },
+
   -- Colorscheme
   { "morhetz/gruvbox" },
 
