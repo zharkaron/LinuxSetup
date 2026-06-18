@@ -79,6 +79,9 @@ return {
     end,
   },
 
+  -- Which-key (help discover keymaps)
+  { "folke/which-key.nvim", opts = {} },
+
   -- Colorscheme
   { "morhetz/gruvbox" },
 
