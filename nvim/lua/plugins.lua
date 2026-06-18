@@ -86,6 +86,33 @@ return {
   { "williamboman/mason.nvim" },
   { "williamboman/mason-lspconfig.nvim", dependencies = "mason.nvim" },
 
+  -- Conform (auto-format on save)
+  {
+    "stevearc/conform.nvim",
+    opts = {
+      formatters_by_ft = {
+        lua = { "stylua" },
+        python = { "ruff_format" },
+        java = { "google-java-format" },
+        sh = { "shfmt" },
+        html = { "prettierd", "prettier", stop_after_first = true },
+        markdown = { "prettierd", "prettier", stop_after_first = true },
+      },
+      format_on_save = {
+        lsp_fallback = true,
+        timeout_ms = 1500,
+      },
+    },
+    keys = {
+      {
+        "<leader>F",
+        function() require("conform").format({ lsp_fallback = true, timeout_ms = 1500 }) end,
+        desc = "Format buffer",
+        mode = { "n", "x" },
+      },
+    },
+  },
+
   -- Colorscheme
   { "morhetz/gruvbox" },
 
