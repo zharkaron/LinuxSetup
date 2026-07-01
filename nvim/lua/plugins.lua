@@ -156,6 +156,26 @@ return {
     end,
   },
 
+  -- Noice (modern cmdline & notification UI)
+  {
+    "folke/noice.nvim",
+    dependencies = { "MunifTanjim/nui.nvim" },
+    opts = {
+      cmdline = { enabled = true },
+      messages = { enabled = true },
+      notify = { enabled = true },
+      lsp = {
+        progress = { enabled = true },
+        override = { "vim.lsp.util.convert_input_to_markdown" },
+      },
+      presets = {
+        bottom_search = true,
+        command_palette = true,
+        long_message_to_split = true,
+      },
+    },
+  },
+
   -- Todo Comments (highlight TODO/FIXME/HACK)
   {
     "folke/todo-comments.nvim",
