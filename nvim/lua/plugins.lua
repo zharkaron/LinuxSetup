@@ -79,6 +79,9 @@ return {
     end,
   },
 
+  -- Comment (gc to comment/uncomment)
+  { "numToStr/Comment.nvim", opts = {} },
+
   -- Which-key (help discover keymaps)
   { "folke/which-key.nvim", opts = {} },
 
