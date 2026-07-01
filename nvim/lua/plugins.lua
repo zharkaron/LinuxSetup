@@ -156,6 +156,17 @@ return {
     end,
   },
 
+  -- Trouble (diagnostics panel)
+  {
+    "folke/trouble.nvim",
+    keys = {
+      { "<leader>xx", "<cmd>Trouble diagnostics toggle<CR>", desc = "Diagnostics (all)" },
+      { "<leader>xw", "<cmd>Trouble diagnostics toggle filter.buf=0<CR>", desc = "Diagnostics (buffer)" },
+      { "<leader>xs", "<cmd>Trouble symbols toggle<CR>", desc = "Symbols" },
+    },
+    opts = {},
+  },
+
   -- Aerial (symbols sidebar)
   {
     "stevearc/aerial.nvim",
