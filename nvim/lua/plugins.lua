@@ -138,6 +138,24 @@ return {
   { "rcarriga/nvim-dap-ui", dependencies = "nvim-neotest/nvim-nio" },
   { "theHamsta/nvim-dap-virtual-text" },
 
+  -- Bufferline (show open buffers as tabs)
+  {
+    "akinsho/bufferline.nvim",
+    version = "*",
+    dependencies = "nvim-tree/nvim-web-devicons",
+    config = function()
+      require("bufferline").setup({
+        options = {
+          mode = "buffers",
+          show_buffer_close_icons = true,
+          show_close_icon = false,
+          numbers = "ordinal",
+          diagnostics = "nvim_lsp",
+        },
+      })
+    end,
+  },
+
   -- Git signs
   {
     "lewis6991/gitsigns.nvim",
