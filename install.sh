@@ -580,7 +580,7 @@ section_packages() {
     # Check only commands that are expected from distro packages (not upstream-installed like nvim, kitty)
     local check_commands=(
         zsh git curl tar shellcheck sshpass
-        rg fd python3 pip3 node npm
+        rg fd python3 pip3 node npm pandoc
         xclip xinput sha256sum awk ssh sudo dd sync
     )
     if ! check_missing_commands "${check_commands[@]}"; then

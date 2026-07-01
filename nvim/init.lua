@@ -70,6 +70,9 @@ require("terminal.config")
 require("terminal.style")
 require("terminal.keys")
 
+-- pandoc (file format conversion)
+require("pandoc.keys")
+
 -- Mason (LSP/formatter/linter installer)
 require("mason.config")
 
