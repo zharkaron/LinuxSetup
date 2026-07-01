@@ -3,6 +3,19 @@ local Terminal = require("toggleterm.terminal").Terminal
 local fn = vim.fn
 local notify = vim.notify
 
+-- Persistent bottom terminal toggled with F12
+local bottom_term = Terminal:new({
+  direction = "horizontal",
+  close_on_exit = true,
+  hidden = true,
+})
+vim.keymap.set({ "n", "t" }, "<F12>", function()
+  bottom_term:toggle()
+end, { desc = "Toggle persistent terminal" })
+
+-- Exit terminal mode with Esc (back to terminal-normal mode)
+vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" })
+
 local function open_floating_terminal_in_dir(path)
   local term = Terminal:new({
     dir = path,
