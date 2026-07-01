@@ -156,6 +156,16 @@ return {
     end,
   },
 
+  -- Todo Comments (highlight TODO/FIXME/HACK)
+  {
+    "folke/todo-comments.nvim",
+    keys = {
+      { "<leader>xt", "<cmd>TodoTrouble<CR>", desc = "Todo (Trouble)" },
+      { "<leader>xT", "<cmd>TodoTelescope<CR>", desc = "Todo (Telescope)" },
+    },
+    opts = {},
+  },
+
   -- Trouble (diagnostics panel)
   {
     "folke/trouble.nvim",
