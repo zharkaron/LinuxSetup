@@ -1,3 +1,4 @@
+local lspconfig = require("lspconfig")
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
 if has_cmp then
@@ -48,8 +49,12 @@ vim.api.nvim_create_autocmd("FileType", {
     end
 
     local root_dir = find_root(args.buf)
-    local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
+    local project_name = vim.fn.fnamemodify(root_dir, ":p:h:t")
+    local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/workspace/" .. project_name
     local config_dir = vim.fn.stdpath("cache") .. "/jdtls/config"
+
+    vim.fn.mkdir(workspace_dir, "p")
+    vim.fn.mkdir(config_dir, "p")
 
     vim.lsp.start({
       name = "jdtls",
@@ -60,3 +65,12 @@ vim.api.nvim_create_autocmd("FileType", {
     }, { bufnr = args.buf })
   end,
 })
+
+-- General LSP servers (installed via Mason)
+local servers = { "bashls", "pyright", "html", "jsonls", "yamlls" }
+for _, server in ipairs(servers) do
+  lspconfig[server].setup({
+    capabilities = capabilities,
+    on_attach = on_attach,
+  })
+end

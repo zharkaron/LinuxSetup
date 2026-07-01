@@ -13,7 +13,8 @@ mason.setup({
 })
 
 mason_lspconfig.setup({
-    automatic_installation = false,
+    ensure_installed = { "bashls", "pyright", "html", "jsonls", "yamlls" },
+    automatic_installation = true,
 })
 
 vim.api.nvim_create_autocmd("User", {
