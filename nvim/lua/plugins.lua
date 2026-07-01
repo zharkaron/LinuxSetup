@@ -156,6 +156,21 @@ return {
     end,
   },
 
+  -- Aerial (symbols sidebar)
+  {
+    "stevearc/aerial.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    keys = {
+      { "<leader>a", "<cmd>AerialToggle left<CR>", desc = "Toggle symbols sidebar" },
+    },
+    config = function()
+      require("aerial").setup({
+        backends = { "treesitter", "lsp" },
+        show_linenrs = true,
+      })
+    end,
+  },
+
   -- Git signs
   {
     "lewis6991/gitsigns.nvim",
