@@ -30,6 +30,7 @@ declare -gA PKG_COMMAND_MAP=(
     [notmuch]="notmuch notmuch notmuch"
     [node]="nodejs"
     [npm]="npm"
+    [pandoc]="pandoc"
     [nvim]="neovim"
     [pass]="pass pass pass"
     [pip3]="python3-pip python3-pip python-pip"
@@ -99,7 +100,7 @@ load_package_manifest() {
             PKG_REQUIRED_PACKAGES=(
                 zsh git curl tar shellcheck luarocks build-essential
                 sshpass xinput ripgrep fd-find nodejs npm
-                python3 python3-pip wl-clipboard xclip
+                python3 python3-pip wl-clipboard xclip pandoc
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
@@ -111,7 +112,7 @@ load_package_manifest() {
             PKG_REQUIRED_PACKAGES=(
                 zsh git curl tar ShellCheck luarocks
                 gcc gcc-c++ make sshpass xinput ripgrep fd-find
-                nodejs npm python3 python3-pip wl-clipboard xclip
+                nodejs npm python3 python3-pip wl-clipboard xclip pandoc
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools; availability depends on enabled repos"
             PKG_OPTIONAL_PACKAGES=(
@@ -123,7 +124,7 @@ load_package_manifest() {
             PKG_REQUIRED_PACKAGES=(
                 zsh git curl tar shellcheck luarocks base-devel
                 sshpass xorg-xinput ripgrep fd
-                nodejs npm python python-pip wl-clipboard xclip
+                nodejs npm python python-pip wl-clipboard xclip pandoc
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(

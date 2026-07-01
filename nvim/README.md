@@ -43,6 +43,18 @@ Notes:
 - (n) <leader>tb — Open a floating terminal in the current buffer's directory
   - defined in: lua/terminal/keys.lua
 
+## Pandoc — file format conversion (lua/pandoc/keys.lua)
+Convert current file to another format via pandoc. Requires `pandoc` on PATH.
+- `:PandocTo <format>` — Convert to any format (tab-completes: pdf, docx, html, md, epub, odt, ...)
+- (n) `<leader>pd` — Convert to DOCX (.docx)
+  - defined in: lua/pandoc/keys.lua
+- (n) `<leader>pp` — Convert to PDF (.pdf)
+  - defined in: lua/pandoc/keys.lua
+- (n) `<leader>ph` — Convert to HTML (.html)
+  - defined in: lua/pandoc/keys.lua
+- (n) `<leader>pm` — Convert to Markdown (.md)
+  - defined in: lua/pandoc/keys.lua
+
 ## AI Chat (lua/ai/keys.lua)
 Local AI chat powered by [codecompanion.nvim](https://github.com/olimorris/codecompanion.nvim),
 talking to a model served on **localhost** — no external AI account required.
