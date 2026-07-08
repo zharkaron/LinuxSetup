@@ -272,7 +272,7 @@ return {
   },
 
   -- vim-illuminate: auto-highlight word under cursor
-  { "RRethy/vim-illuminate" },
+  { "RRethy/vim-illuminate", event = "VeryLazy" },
 
   -- Undotree: visual undo history
   { "mbbill/undotree" },
