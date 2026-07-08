@@ -8,11 +8,14 @@
 # shellcheck disable=SC2034
 declare -gA PKG_COMMAND_MAP=(
     [awk]="gawk"
+    [bat]="bat bat bat"
     [curl]="curl"
     [dd]="coreutils"
     [docker]="docker.io docker docker"
     [docker-compose]="docker-compose docker-compose docker-compose"
+    [eza]="eza eza eza"
     [fd]="fd-find fd-find fd"
+    [fzf]="fzf fzf fzf"
     [git]="git"
     [g++]="build-essential gcc-c++ base-devel"
     [gcc]="build-essential gcc base-devel"
@@ -44,6 +47,7 @@ declare -gA PKG_COMMAND_MAP=(
     [sync]="coreutils"
     [tar]="tar"
     [wl-copy]="wl-clipboard"
+    [zoxide]="zoxide zoxide zoxide"
     [xclip]="xclip"
     [xdg-open]="xdg-utils"
     [xinput]="xinput xinput xorg-xinput"
@@ -101,6 +105,7 @@ load_package_manifest() {
                 zsh git curl tar shellcheck luarocks build-essential
                 sshpass xinput ripgrep fd-find nodejs npm
                 python3 python3-pip wl-clipboard xclip pandoc
+                fzf zoxide eza bat
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
@@ -113,6 +118,7 @@ load_package_manifest() {
                 zsh git curl tar ShellCheck luarocks
                 gcc gcc-c++ make sshpass xinput ripgrep fd-find
                 nodejs npm python3 python3-pip wl-clipboard xclip pandoc
+                fzf zoxide eza bat
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools; availability depends on enabled repos"
             PKG_OPTIONAL_PACKAGES=(
@@ -125,6 +131,7 @@ load_package_manifest() {
                 zsh git curl tar shellcheck luarocks base-devel
                 sshpass xorg-xinput ripgrep fd
                 nodejs npm python python-pip wl-clipboard xclip pandoc
+                fzf zoxide eza bat
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
