@@ -100,6 +100,10 @@ require("dap.config")
 -- telescope
 require("telescope.setup")
 
+-- harpoon
+require("harpoon.setup")
+require("harpoon.maps")
+
 -- Help list
 require("help.config")
 

@@ -26,5 +26,7 @@ telescope.setup({
   },
 })
 
+telescope.load_extension("ui-select")
+
 require("telescope.keys")
 require("telescope.style")
