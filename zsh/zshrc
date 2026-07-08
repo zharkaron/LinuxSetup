@@ -29,6 +29,13 @@ source "$ZSH_ROOT/core/command-not-found.zsh"
 source "$ZSH_ROOT/core/plugins.zsh"
 export PATH="$HOME/.local/bin:$PATH"
 
+# fzf: fuzzy finder key bindings (Ctrl+T, Ctrl+R, Alt+C) and completion
+source /usr/share/fzf/shell/key-bindings.zsh 2>/dev/null
+source /usr/share/fzf/shell/completion.zsh 2>/dev/null
+
+# zoxide: smart directory jumping (z, zi, zq)
+eval "$(zoxide init zsh)"
+
 bwuser () {
   bw get item "$1" | jq -r '.login.username'
 }
