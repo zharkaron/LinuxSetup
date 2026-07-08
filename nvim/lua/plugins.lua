@@ -263,4 +263,23 @@ return {
     "NeogitOrg/neogit",
     dependencies = "nvim-lua/plenary.nvim",
   },
+
+  -- Harpoon: quick file marks
+  {
+    "ThePrimeagen/harpoon",
+    branch = "harpoon2",
+    dependencies = "nvim-lua/plenary.nvim",
+  },
+
+  -- vim-illuminate: auto-highlight word under cursor
+  { "RRethy/vim-illuminate" },
+
+  -- Undotree: visual undo history
+  { "mbbill/undotree" },
+
+  -- nvim-surround: add/delete/change surrounding delimiters
+  { "kylechui/nvim-surround", opts = {} },
+
+  -- telescope-ui-select: native-looking vim.ui.select
+  { "nvim-telescope/telescope-ui-select.nvim" },
 }

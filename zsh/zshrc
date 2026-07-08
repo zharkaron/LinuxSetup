@@ -80,3 +80,15 @@ alias desk='cd "$WINHOME/Desktop"'
 # Quick copy: cp file → Windows Documents
 cpdoc() { cp -v "$1" "$WINHOME/Documents/"; }
 cpdown() { cp -v "$1" "$WINHOME/Downloads/"; }
+
+# forgit: fuzzy git operations (glo, gca, gcf, etc. — type g + tab to see all)
+if [[ -f "$HOME/.forgit/forgit.plugin.zsh" ]]; then
+  source "$HOME/.forgit/forgit.plugin.zsh"
+fi
+
+# delta: better git diff with syntax highlighting and side-by-side
+if command -v delta &>/dev/null; then
+  export GIT_PAGER="delta"
+  git config --global core.pager "delta" 2>/dev/null
+  git config --global interactive.diffFilter "delta --color-only" 2>/dev/null
+fi
