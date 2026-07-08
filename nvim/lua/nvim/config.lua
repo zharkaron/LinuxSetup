@@ -4,17 +4,17 @@
 -- Clipboard: use system clipboard (+) register by default
 vim.opt.clipboard = "unnamedplus"
 
--- WSL2: bridge Neovim clipboard to Windows clipboard via clip.exe/powershell.exe
+-- WSL2: bridge Neovim clipboard to Windows clipboard via powershell.exe
 if vim.fn.has("wsl") == 1 then
   vim.g.clipboard = {
     name = "WSL-clipboard",
     copy = {
-      ["+"] = { "clip.exe" },
-      ["*"] = { "clip.exe" },
+      ["+"] = { "powershell.exe", "-NoProfile", "-Command", "$input | Set-Clipboard" },
+      ["*"] = { "powershell.exe", "-NoProfile", "-Command", "$input | Set-Clipboard" },
     },
     paste = {
-      ["+"] = { "powershell.exe", "-c", "[Console]::Out.Write($(Get-Clipboard -Raw).Replace(\"`r\", \"\"))" },
-      ["*"] = { "powershell.exe", "-c", "[Console]::Out.Write($(Get-Clipboard -Raw).Replace(\"`r\", \"\"))" },
+      ["+"] = { "powershell.exe", "-NoProfile", "-Command", "[Console]::Out.Write($(Get-Clipboard -Raw).Replace(\"`r\", \"\"))" },
+      ["*"] = { "powershell.exe", "-NoProfile", "-Command", "[Console]::Out.Write($(Get-Clipboard -Raw).Replace(\"`r\", \"\"))" },
     },
     cache_enabled = true,
   }
