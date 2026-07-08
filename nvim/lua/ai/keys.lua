@@ -17,8 +17,8 @@ local function ai_chat_about_buffer(instruction)
   })
 end
 
--- Open / toggle the chat window
-vim.keymap.set({ "n", "v" }, "<leader>c", "<cmd>CodeCompanionChat Toggle<cr>", { desc = "Toggle AI chat" })
+-- Open / toggle the chat window (use \ca for this; avoid bare \c so \ca doesn't conflict)
+vim.keymap.set({ "n", "v" }, "<leader>ca", "<cmd>CodeCompanionChat Toggle<cr>", { desc = "Toggle AI chat" })
 
 -- Fix / explain / review the current buffer, answered in the chat window
 vim.keymap.set("n", "<leader>cf", function()
@@ -32,6 +32,3 @@ end, { desc = "AI: explain current buffer" })
 vim.keymap.set("n", "<leader>cr", function()
   ai_chat_about_buffer("Please review the following code for bugs, style, and possible improvements:")
 end, { desc = "AI: review current buffer" })
-
--- Action palette (replaces the old <leader>ca multi-file context helper)
-vim.keymap.set({ "n", "v" }, "<leader>ca", "<cmd>CodeCompanionActions<cr>", { desc = "AI: open action palette" })

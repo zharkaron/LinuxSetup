@@ -6,7 +6,7 @@ require("minuet").setup({
   provider = "openai_fim_compatible",
   n_completions = 1,    -- one suggestion at a time (lighter on a local model)
   context_window = 512, -- start small; raise if your machine can handle it
-  request_timeout = 5,  -- seconds; a local model's first token can be slow
+  request_timeout = 30, -- seconds; Ollama on Windows over host.docker.internal can be slow
   throttle = 1500,      -- ms between requests
   debounce = 600,       -- ms of idle typing before a request is sent
   provider_options = {
@@ -14,7 +14,7 @@ require("minuet").setup({
       api_key = "TERM", -- Ollama ignores auth; any present env var name satisfies it
       name = "Ollama",
       end_point = "http://localhost:11434/v1/completions",
-      model = "qwen2.5-coder:7b",
+      model = "qwen2.5-coder:1.5b",
       optional = {
         max_tokens = 56,
         top_p = 0.9,
