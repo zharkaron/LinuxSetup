@@ -20,7 +20,27 @@ setopt SHARE_HISTORY
 setopt APPEND_HISTORY
 setopt INC_APPEND_HISTORY
 
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+# Completion: case-insensitive, partial-word, and substring matching
+zstyle ':completion:*' matcher-list \
+  'm:{a-z}={A-Za-z}' \
+  'r:|[._-]=* r:|=* l:|=*' \
+  'r:[^/]=**'
+
+# Ignore compiled/binary file extensions in completion
+FIGNORE=".class:.pyc:.o:.so:.swp:.bak"
+
+# Tab menu: show menu when multiple matches, allow arrow-key navigation
+zstyle ':completion:*' menu select=2
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' verbose yes
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%B%d%b'
+
+# Git: cache completion for speed
+zstyle ':completion:*:git-*' cache-policy '*' use-cache yes
+
+# Initialize completion system
+autoload -Uz compinit && compinit
 
 # Load core files
 source "$ZSH_ROOT/core/prompt.zsh"
@@ -50,3 +70,13 @@ bwpass() {
 bwunlock() {
     export BW_SESSION=$(NODE_NO_WARNINGS=1 bw unlock --raw )
 }
+
+# Windows paths (WSL)
+export WINHOME="/mnt/c/Users/zharkaron"
+alias doc='cd "$WINHOME/Documents"'
+alias down='cd "$WINHOME/Downloads"'
+alias desk='cd "$WINHOME/Desktop"'
+
+# Quick copy: cp file → Windows Documents
+cpdoc() { cp -v "$1" "$WINHOME/Documents/"; }
+cpdown() { cp -v "$1" "$WINHOME/Downloads/"; }
