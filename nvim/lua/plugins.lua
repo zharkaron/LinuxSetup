@@ -75,7 +75,61 @@ return {
       "nvim-tree/nvim-web-devicons",
     },
     config = function()
-      require("render-markdown").setup({})
+      require("render-markdown").setup({
+        render_modes = true,
+        heading = {
+          position = "inline",
+          width = "block",
+          min_width = 60,
+          border = true,
+          above = "▔",
+          below = "▁",
+          backgrounds = {
+            "RenderMarkdownH1Bg",
+            "RenderMarkdownH2Bg",
+            "RenderMarkdownH3Bg",
+            "RenderMarkdownH4Bg",
+            "RenderMarkdownH5Bg",
+            "RenderMarkdownH6Bg",
+          },
+        },
+        code = {
+          width = "block",
+          border = "thick",
+          position = "right",
+          sign = false,
+          left_pad = 2,
+          right_pad = 2,
+          language_pad = 1,
+        },
+        bullet = {
+          icons = { "◆", "•", "◦" },
+        },
+        checkbox = {
+          unchecked = { icon = "☐ " },
+          checked = { icon = "☑ " },
+        },
+        pipe_table = {
+          preset = "round",
+          alignment_indicator = "▕",
+        },
+        dash = {
+          icon = "▔",
+          width = "block",
+        },
+        quote = {
+          icon = "▎",
+        },
+        link = {
+          hyperlink = "→",
+          image = "🖼",
+          email = "✉",
+        },
+        win_options = {
+          conceallevel = { default = vim.api.nvim_get_option_value("conceallevel", {}), rendered = 3 },
+          concealcursor = { default = vim.api.nvim_get_option_value("concealcursor", {}), rendered = "nvic" },
+        },
+      })
     end,
   },
 
