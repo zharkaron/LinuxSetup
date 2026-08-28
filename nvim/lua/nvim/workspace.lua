@@ -782,50 +782,43 @@ function M.open()
                     return
                 end
                 local closed = term.tabs[closed_idx]
-                local was_active = term.active == closed_idx
 
                 -- Run tabs keep their output visible so it can be read.
                 if not closed.is_shell then
                     return
                 end
 
-                -- Shell terminals: close on exit, but never leave the panel empty.
-                local other_shells = 0
-                for i, tab in ipairs(term.tabs) do
-                    if i ~= closed_idx and tab.is_shell then
-                        other_shells = other_shells + 1
-                    end
+                -- Shell closed: drop it from the list. Never auto-create a new
+                -- terminal here (an out-of-place one just scrambles the tabs),
+                -- and never leave the panel empty if other tabs remain.
+                term_remove_tab(buf)
+                if #term.tabs == 0 then
+                    -- Panel would be empty: seed a fresh shell at the natural slot.
+                    open_fresh_terminal()
+                    term.active = #term.tabs
+                    p4_show(term.tabs[#term.tabs].buf)
+                    return
                 end
-
-                if other_shells >= 1 then
-                    -- Another shell exists: close this one and focus another.
-                    if was_active then
-                        term.active = nil
-                    end
-                    term_remove_tab(buf)
-                    if not get_p4_win() then
-                        return
-                    end
-                    if term.active == nil then
-                        for i, tab in ipairs(term.tabs) do
-                            if tab.is_shell then
-                                term.active = i
-                                p4_show(tab.buf)
-                                break
-                            end
+                if not get_p4_win() then
+                    return
+                end
+                -- Focus the most recently-active tab that is still valid.
+                local focus = term.tabs[term.active]
+                if not focus or not vim.api.nvim_buf_is_valid(focus.buf) then
+                    focus = nil
+                    for _, tab in ipairs(term.tabs) do
+                        if vim.api.nvim_buf_is_valid(tab.buf) then
+                            focus = tab
+                            break
                         end
                     end
-                else
-                    -- Last terminal in the panel: refresh it in place so the panel never closes.
-                    local index = closed_idx
-                    term_remove_tab(buf)
-                    if not get_p4_win() then
-                        return
-                    end
-                    open_fresh_terminal()
-                    if index <= #term.tabs then
-                        term.active = index
-                        p4_show(term.tabs[index].buf)
+                end
+                if focus then
+                    for i, tab in ipairs(term.tabs) do
+                        if tab == focus then
+                            term.active = i
+                            p4_show(tab.buf)
+                        end
                     end
                 end
             end)
