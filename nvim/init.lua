@@ -25,6 +25,9 @@ require("nvim.config")
 require("nvim.style")
 require("nvim.keys")
 
+-- Standalone 4-panel workspace layout (for testing; toggle on/off)
+require("nvim.workspace_lab").setup()
+
 -- Load plugin-specific modular configs
 
 -- treesitter
