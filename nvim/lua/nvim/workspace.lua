@@ -222,7 +222,7 @@ local function toggle_nvimtree()
 end
 
 local term = {
-    tabs = {},
+    tabs = {}, -- each entry: { buf = bufnr, label = string }
     active = nil,
 }
 M.term = term
@@ -235,6 +235,42 @@ local function get_p4_win()
     return nil
 end
 
+local function get_sidebar_win()
+    local win = M.term_sidebar_win
+    if win and vim.api.nvim_win_is_valid(win) then
+        return win
+    end
+    return nil
+end
+
+local function update_sidebar()
+    local win = get_sidebar_win()
+    if not win then
+        return
+    end
+    local sbuf = M.term_sidebar_buf
+    if not vim.api.nvim_buf_is_valid(sbuf) then
+        return
+    end
+
+    local labels = {}
+    for idx, tab in ipairs(term.tabs) do
+        local mark = (idx == term.active) and "*" or " "
+        labels[#labels + 1] = string.format("%s%d:%s", mark, idx, tab.short_label or tab.label or "")
+    end
+    labels[#labels + 1] = " +new"
+
+    local line = table.concat(labels, "  ")
+    local max = vim.api.nvim_win_get_width(win)
+    if #line > max then
+        line = line:sub(1, max - 1)
+    end
+
+    vim.bo[sbuf].modifiable = true
+    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, { line })
+    vim.bo[sbuf].modifiable = false
+end
+
 local function p4_show(buf)
     local win = get_p4_win()
     if not win then return end
@@ -242,6 +278,39 @@ local function p4_show(buf)
     vim.api.nvim_win_set_buf(win, buf)
     vim.bo[buf].modifiable = false
     vim.api.nvim_set_current_win(win)
+    update_sidebar()
+end
+
+local function tab_label(dir, cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    if plain_cmd == "" or plain_cmd == vim.o.shell then
+        return "shell " .. (dir or vim.fn.getcwd())
+    end
+    return plain_cmd
+end
+
+local function tab_is_shell(cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    return plain_cmd == "" or plain_cmd == vim.o.shell
+end
+
+local function tab_short_label(dir, cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    if plain_cmd == "" or plain_cmd == vim.o.shell then
+        return "shell"
+    end
+    local trimmed = plain_cmd
+    local ispy = trimmed:find("[%w_%-%.]+%.py") ~= nil
+    if ispy then
+        local file = trimmed:match("([%w_%-%.]+%.py)")
+        if file then
+            return file
+        end
+    end
+    if #trimmed > 14 then
+        return trimmed:sub(1, 14) .. ".."
+    end
+    return trimmed
 end
 
 local function term_new_tab(dir, cmd)
@@ -251,18 +320,47 @@ local function term_new_tab(dir, cmd)
         return
     end
     local buf = vim.api.nvim_create_buf(false, true)
-    vim.bo[buf].buftype = "terminal"
-    vim.bo[buf].swapfile = false
-    vim.bo[buf].bufhidden = "hide"
     vim.api.nvim_win_set_buf(win, buf)
     vim.api.nvim_set_current_win(win)
     vim.fn.termopen(cmd or vim.o.shell, { cwd = dir or vim.fn.getcwd() })
-    term.tabs[#term.tabs + 1] = buf
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].bufhidden = "hide"
+    term.tabs[#term.tabs + 1] = {
+        buf = buf,
+        label = tab_label(dir, cmd),
+        short_label = tab_short_label(dir, cmd),
+        is_shell = tab_is_shell(cmd),
+    }
     term.active = #term.tabs
+    update_sidebar()
 end
 
 local function open_terminal_in_dir(dir)
     term_new_tab(dir, vim.o.shell)
+end
+
+local function open_fresh_terminal()
+    open_terminal_in_dir(vim.fn.getcwd())
+end
+
+local function term_remove_tab(bufnr)
+    local idx = nil
+    for i, tab in ipairs(term.tabs) do
+        if tab.buf == bufnr then
+            idx = i
+            break
+        end
+    end
+    if not idx then
+        return
+    end
+    table.remove(term.tabs, idx)
+    if term.active == idx then
+        term.active = nil
+    elseif term.active and term.active > idx then
+        term.active = term.active - 1
+    end
+    update_sidebar()
 end
 
 local function term_toggle()
@@ -272,45 +370,46 @@ local function term_toggle()
     local showing_term = vim.bo[current_buf].buftype == "terminal"
 
     if #term.tabs == 0 then
-        open_terminal_in_dir(vim.fn.getcwd())
+        open_fresh_terminal()
         return
     end
 
-    if not term.active or not term.tabs[term.active] or not vim.api.nvim_buf_is_valid(term.tabs[term.active]) then
-        for idx, buf in ipairs(term.tabs) do
-            if vim.api.nvim_buf_is_valid(buf) then
+    if not term.active or not term.tabs[term.active] or not vim.api.nvim_buf_is_valid(term.tabs[term.active].buf) then
+        for idx, tab in ipairs(term.tabs) do
+            if vim.api.nvim_buf_is_valid(tab.buf) then
                 term.active = idx
-                p4_show(buf)
+                p4_show(tab.buf)
                 return
             end
         end
-        open_terminal_in_dir(vim.fn.getcwd())
+        open_fresh_terminal()
         return
     end
 
     if showing_term then
         vim.api.nvim_set_current_win(win)
     else
-        p4_show(term.tabs[term.active])
+        p4_show(term.tabs[term.active].buf)
     end
 end
 
 local function term_reindex()
     local valid = {}
-    for _, buf in ipairs(term.tabs) do
-        if vim.api.nvim_buf_is_valid(buf) then
-            valid[#valid + 1] = buf
+    for _, tab in ipairs(term.tabs) do
+        if vim.api.nvim_buf_is_valid(tab.buf) then
+            valid[#valid + 1] = tab
         end
     end
-    local active_buf = term.active and term.tabs[term.active] or nil
+    local active_tab = term.active and term.tabs[term.active] or nil
     term.tabs = valid
     term.active = nil
-    for idx, buf in ipairs(term.tabs) do
-        if buf == active_buf then
+    for idx, tab in ipairs(term.tabs) do
+        if tab == active_tab then
             term.active = idx
             break
         end
     end
+    update_sidebar()
 end
 
 local function term_next()
@@ -319,7 +418,7 @@ local function term_next()
     local n = term.active or 0
     n = n % #term.tabs + 1
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function term_prev()
@@ -328,17 +427,17 @@ local function term_prev()
     local n = (term.active or 2) - 1
     if n < 1 then n = #term.tabs end
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function term_goto(n)
     term_reindex()
-    if not term.tabs[n] or not vim.api.nvim_buf_is_valid(term.tabs[n]) then
+    if not term.tabs[n] or not vim.api.nvim_buf_is_valid(term.tabs[n].buf) then
         vim.notify("workspace: terminal tab " .. n .. " not open")
         return
     end
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function get_tree_node_path()
@@ -623,9 +722,31 @@ function M.open()
         [4] = bottom_right_win,
     }
 
+    local tabbar_height = 1
+    vim.api.nvim_set_current_win(bottom_right_win)
+    before = win_set()
+    vim.cmd("botright 2split")
+    new_wins = find_new_wins(before)
+    local sidebar_win = new_wins[1]
+    vim.api.nvim_win_set_height(sidebar_win, tabbar_height)
+    vim.api.nvim_set_current_win(bottom_right_win)
+
+    local sidebar_buf = vim.api.nvim_create_buf(false, true)
+    track_buf(sidebar_buf)
+    vim.api.nvim_buf_set_name(sidebar_buf, "[terminals]")
+    vim.bo[sidebar_buf].modifiable = false
+    vim.bo[sidebar_buf].bufhidden = "hide"
+    vim.bo[sidebar_buf].swapfile = false
+    vim.api.nvim_win_set_buf(sidebar_win, sidebar_buf)
+    vim.wo[sidebar_win].winfixheight = true
+
+    M.term_sidebar_win = sidebar_win
+    M.term_sidebar_buf = sidebar_buf
+
     register_lock(actual_left_win, left_buf, true, false)
     register_lock(p2_win, p2_buf, false, false)
     register_lock(bottom_right_win, bottom_buf, false, true)
+    register_lock(sidebar_win, sidebar_buf, false, false)
 
     set_keymap("n", "<leader>e", toggle_nvimtree, { silent = true })
 
@@ -645,6 +766,75 @@ function M.open()
         end,
     })
 
+    vim.api.nvim_create_autocmd("TermClose", {
+        group = M.autocmd_group,
+        callback = function(args)
+            vim.schedule(function()
+                local buf = args.buf
+                local closed_idx = nil
+                for i, tab in ipairs(term.tabs) do
+                    if tab.buf == buf then
+                        closed_idx = i
+                        break
+                    end
+                end
+                if not closed_idx then
+                    return
+                end
+                local closed = term.tabs[closed_idx]
+                local was_active = term.active == closed_idx
+
+                -- Run tabs keep their output visible so it can be read.
+                if not closed.is_shell then
+                    return
+                end
+
+                -- Shell terminals: close on exit, but never leave the panel empty.
+                local other_shells = 0
+                for i, tab in ipairs(term.tabs) do
+                    if i ~= closed_idx and tab.is_shell then
+                        other_shells = other_shells + 1
+                    end
+                end
+
+                if other_shells >= 1 then
+                    -- Another shell exists: close this one and focus another.
+                    if was_active then
+                        term.active = nil
+                    end
+                    term_remove_tab(buf)
+                    if not get_p4_win() then
+                        return
+                    end
+                    if term.active == nil then
+                        for i, tab in ipairs(term.tabs) do
+                            if tab.is_shell then
+                                term.active = i
+                                p4_show(tab.buf)
+                                break
+                            end
+                        end
+                    end
+                else
+                    -- Last terminal in the panel: refresh it in place so the panel never closes.
+                    local index = closed_idx
+                    term_remove_tab(buf)
+                    if not get_p4_win() then
+                        return
+                    end
+                    open_fresh_terminal()
+                    if index <= #term.tabs then
+                        term.active = index
+                        p4_show(term.tabs[index].buf)
+                    end
+                end
+            end)
+        end,
+    })
+
+    update_sidebar()
+    open_fresh_terminal()
+
     vim.api.nvim_set_current_win(actual_left_win)
 end
 
@@ -655,13 +845,34 @@ function M.close()
     local had_terminal = #term.tabs > 0
     local wins = M.wins
     M.wins = nil
+
+    local sidebar_win = M.term_sidebar_win
+    local term_bufs = {}
+    for _, tab in ipairs(term.tabs) do
+        term_bufs[#term_bufs + 1] = tab.buf
+    end
     term.tabs = {}
     term.active = nil
+    M.term_sidebar_buf = nil
+    M.term_sidebar_win = nil
     M.locked = {}
 
-    for _, w in ipairs(wins) do
+    local all_wins = vim.tbl_filter(function(w)
+        return vim.api.nvim_win_is_valid(w)
+    end, wins)
+    if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+        all_wins[#all_wins + 1] = sidebar_win
+    end
+
+    for _, w in ipairs(all_wins) do
         if vim.api.nvim_win_is_valid(w) and #vim.api.nvim_list_wins() > 1 then
             pcall(vim.api.nvim_win_close, w, true)
+        end
+    end
+
+    for _, buf in ipairs(term_bufs) do
+        if vim.api.nvim_buf_is_valid(buf) then
+            pcall(vim.api.nvim_buf_delete, buf, { force = true })
         end
     end
 
