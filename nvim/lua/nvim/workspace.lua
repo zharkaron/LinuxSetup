@@ -753,7 +753,6 @@ function M.open()
 
     M.term_sidebar_win = sidebar_win
     M.term_sidebar_buf = sidebar_buf
-    M.p4_height = vim.api.nvim_win_get_height(bottom_right_win)
 
     register_lock(actual_left_win, left_buf, true, false)
     register_lock(p2_win, p2_buf, false, false)
@@ -778,62 +777,6 @@ function M.open()
         end,
     })
 
-    local function panel4_valid()
-        local p4 = M.wins and M.wins[4]
-        return p4 and p4 ~= 0 and vim.api.nvim_win_is_valid(p4)
-    end
-
-    -- Panel 4's main terminal window can be torn down externally (e.g. when a
-    -- plugin reacts to a finished terminal during interaction). Repair it so the
-    -- layout does not get permanently broken / the sidebar left orphaned.
-    local function repair_panel4()
-        if panel4_valid() then
-            return
-        end
-        local sidebar_win = M.term_sidebar_win
-        if not sidebar_win or not vim.api.nvim_win_is_valid(sidebar_win) then
-            return
-        end
-        local ok, win = pcall(function()
-            vim.api.nvim_set_current_win(sidebar_win)
-            -- Split upward from the right-column-width sidebar so the new
-            -- window lands back in P4's original slot: right column, directly
-            -- above the 1-line sidebar and below the top-right panels.
-            vim.cmd("aboveleft split")
-            return vim.api.nvim_get_current_win()
-        end)
-        if not ok or not win or not vim.api.nvim_win_is_valid(win) then
-            return
-        end
-        M.wins[4] = win
-        vim.api.nvim_win_set_buf(win, bottom_buf)
-        register_lock(win, bottom_buf, false, true)
-        if M.p4_height and M.p4_height > 0 then
-            pcall(vim.api.nvim_win_set_height, win, M.p4_height)
-        end
-        local tab = term.active and term.tabs[term.active]
-        if not tab or not vim.api.nvim_buf_is_valid(tab.buf) then
-            for _, t in ipairs(term.tabs) do
-                if vim.api.nvim_buf_is_valid(t.buf) then
-                    tab = t
-                    break
-                end
-            end
-        end
-        if tab and vim.api.nvim_buf_is_valid(tab.buf) then
-            p4_show(tab.buf)
-        else
-            update_sidebar()
-        end
-    end
-
-    vim.api.nvim_create_autocmd("WinClosed", {
-        group = M.autocmd_group,
-        callback = function()
-            vim.schedule(repair_panel4)
-        end,
-    })
-
     vim.api.nvim_create_autocmd("TermClose", {
         group = M.autocmd_group,
         callback = function(args)
@@ -851,8 +794,21 @@ function M.open()
                 end
                 local closed = term.tabs[closed_idx]
 
-                -- Run tabs keep their output visible so it can be read.
+                -- Run tabs keep their output visible so it can be read. If the
+                -- panel window got taken over while the job was running (e.g. a
+                -- plugin reacted to the exit), reseat the run terminal back into
+                -- Panel 4 so its output stays on screen.
                 if not closed.is_shell then
+                    local p4 = get_p4_win()
+                    if p4 and vim.api.nvim_win_is_valid(p4) then
+                        local cur = vim.api.nvim_win_get_buf(p4)
+                        if cur ~= buf then
+                            vim.api.nvim_win_set_buf(p4, buf)
+                        end
+                        vim.api.nvim_set_current_win(p4)
+                        term.active = closed_idx
+                        update_sidebar()
+                    end
                     return
                 end
 
@@ -893,6 +849,94 @@ function M.open()
         end,
     })
 
+    -- If Panel 4's main terminal window is torn down externally (e.g. a plugin
+    -- reacting to a finished terminal), recreate it so the layout is not left
+    -- permanently broken and the sidebar is not orphaned.
+    local function panel4_valid()
+        local p4 = M.wins and M.wins[4]
+        return p4 and p4 ~= 0 and vim.api.nvim_win_is_valid(p4)
+    end
+    -- Deterministically rebuild the whole workspace layout when Panel 4 is
+    -- lost. Neovim re-displays hidden terminal buffers in a full-width window
+    -- when P4's window closes, which swallows Panel 1; patch-work split resizing
+    -- cannot reliably undo that, so we close the damaged windows and rebuild.
+    local function rebuild_layout()
+        local old_term_tabs = term.tabs
+        local old_active = term.active
+
+        M.wins = nil
+        M.term_sidebar_win = nil
+        M.term_sidebar_buf = nil
+        M.locked = {}
+
+        -- Delete the old scratch buffers (task/panel placeholders/sidebar) so
+        -- M.open() can recreate them without E95 name collisions. Terminal tab
+        -- buffers are kept and re-attached afterwards.
+        for _, buf in ipairs(M.created_bufs or {}) do
+            if vim.api.nvim_buf_is_valid(buf) then
+                pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            end
+        end
+        M.created_bufs = {}
+
+        -- Close every window except the last so the damaged layout (including
+        -- the full-width window Neovim spawns for a re-displayed terminal) is
+        -- fully cleared before M.open() rebuilds from a clean slate.
+        local all = vim.api.nvim_list_wins()
+        while #all > 1 do
+            pcall(vim.api.nvim_win_close, all[1], true)
+            all = vim.api.nvim_list_wins()
+        end
+
+        -- Rebuild the standard layout.
+        local ok_rb, err_rb = pcall(M.open)
+        if not ok_rb then
+            vim.notify("workspace: layout rebuild failed: " .. tostring(err_rb), vim.log.levels.ERROR)
+            return
+        end
+
+        -- Re-attach the previously open terminal tabs to the fresh P4 window.
+        local new_p4 = M.wins and M.wins[4]
+        if new_p4 and vim.api.nvim_win_is_valid(new_p4) then
+            term.tabs = old_term_tabs
+            term.active = old_active
+            -- Drop the placeholder shell M.open() seeded, keep only real tabs.
+            local shell_buf = vim.api.nvim_win_get_buf(new_p4)
+            for idx = #term.tabs, 1, -1 do
+                if term.tabs[idx].buf == shell_buf then
+                    table.remove(term.tabs, idx)
+                end
+            end
+            local tab = term.active and term.tabs[term.active]
+            if not tab or not vim.api.nvim_buf_is_valid(tab.buf) then
+                for _, t in ipairs(term.tabs) do
+                    if vim.api.nvim_buf_is_valid(t.buf) then
+                        tab = t
+                        break
+                    end
+                end
+            end
+            if tab and vim.api.nvim_buf_is_valid(tab.buf) then
+                p4_show(tab.buf)
+            end
+            update_sidebar()
+        end
+    end
+
+    vim.api.nvim_create_autocmd("WinClosed", {
+        group = M.autocmd_group,
+        callback = function()
+            if M._closing then
+                return
+            end
+            vim.schedule(function()
+                if not M._closing and not panel4_valid() then
+                    pcall(rebuild_layout)
+                end
+            end)
+        end,
+    })
+
     update_sidebar()
     open_fresh_terminal()
 
@@ -903,6 +947,7 @@ function M.close()
     if not M.wins then
         return
     end
+    M._closing = true
     local had_terminal = #term.tabs > 0
     local wins = M.wins
     M.wins = nil
@@ -949,6 +994,7 @@ function M.close()
     clear_workspace_autocmds()
     M.saved_picker = nil
     M.saved_sizes = nil
+    M._closing = false
 
     if had_terminal then
         vim.notify("workspace: closed. Terminal tabs were not persisted.")
