@@ -1,4 +1,3 @@
-local lspconfig = require("lspconfig")
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
 if has_cmp then
@@ -66,11 +65,17 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- General LSP servers (installed via Mason)
+-- General LSP servers (installed via Mason), using the modern
+-- vim.lsp.config / vim.lsp.enable API (nvim-lspconfig >= 0.11 / v3).
 local servers = { "bashls", "pyright", "html", "jsonls", "yamlls" }
 for _, server in ipairs(servers) do
-  lspconfig[server].setup({
-    capabilities = capabilities,
-    on_attach = on_attach,
-  })
+  if vim.lsp.config[server] then
+    vim.lsp.config(server, {
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
+    vim.lsp.enable(server)
+  else
+    vim.notify("LSP: no built-in config for '" .. server .. "'; skipping.", vim.log.levels.WARN)
+  end
 end
