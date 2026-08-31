@@ -51,6 +51,17 @@ local function toggle_task()
     vim.bo[buf].modifiable = true
     vim.api.nvim_buf_set_lines(buf, row - 1, row, false, { new_line })
     vim.bo[buf].modifiable = false
+
+    if M.task_file then
+        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local f = io.open(M.task_file, "w")
+        if f then
+            for _, l in ipairs(lines) do
+                f:write(l, "\n")
+            end
+            f:close()
+        end
+    end
 end
 
 local function ensure_task_file()
@@ -725,7 +736,7 @@ function M.open()
     local tabbar_height = 1
     vim.api.nvim_set_current_win(bottom_right_win)
     before = win_set()
-    vim.cmd("botright 2split")
+    vim.cmd("belowright 2split")
     new_wins = find_new_wins(before)
     local sidebar_win = new_wins[1]
     vim.api.nvim_win_set_height(sidebar_win, tabbar_height)
@@ -742,6 +753,7 @@ function M.open()
 
     M.term_sidebar_win = sidebar_win
     M.term_sidebar_buf = sidebar_buf
+    M.p4_height = vim.api.nvim_win_get_height(bottom_right_win)
 
     register_lock(actual_left_win, left_buf, true, false)
     register_lock(p2_win, p2_buf, false, false)
@@ -763,6 +775,62 @@ function M.open()
         group = M.autocmd_group,
         callback = function()
             vim.schedule(refresh_panel1)
+        end,
+    })
+
+    local function panel4_valid()
+        local p4 = M.wins and M.wins[4]
+        return p4 and p4 ~= 0 and vim.api.nvim_win_is_valid(p4)
+    end
+
+    -- Panel 4's main terminal window can be torn down externally (e.g. when a
+    -- plugin reacts to a finished terminal during interaction). Repair it so the
+    -- layout does not get permanently broken / the sidebar left orphaned.
+    local function repair_panel4()
+        if panel4_valid() then
+            return
+        end
+        local sidebar_win = M.term_sidebar_win
+        if not sidebar_win or not vim.api.nvim_win_is_valid(sidebar_win) then
+            return
+        end
+        local ok, win = pcall(function()
+            vim.api.nvim_set_current_win(sidebar_win)
+            -- Split upward from the right-column-width sidebar so the new
+            -- window lands back in P4's original slot: right column, directly
+            -- above the 1-line sidebar and below the top-right panels.
+            vim.cmd("aboveleft split")
+            return vim.api.nvim_get_current_win()
+        end)
+        if not ok or not win or not vim.api.nvim_win_is_valid(win) then
+            return
+        end
+        M.wins[4] = win
+        vim.api.nvim_win_set_buf(win, bottom_buf)
+        register_lock(win, bottom_buf, false, true)
+        if M.p4_height and M.p4_height > 0 then
+            pcall(vim.api.nvim_win_set_height, win, M.p4_height)
+        end
+        local tab = term.active and term.tabs[term.active]
+        if not tab or not vim.api.nvim_buf_is_valid(tab.buf) then
+            for _, t in ipairs(term.tabs) do
+                if vim.api.nvim_buf_is_valid(t.buf) then
+                    tab = t
+                    break
+                end
+            end
+        end
+        if tab and vim.api.nvim_buf_is_valid(tab.buf) then
+            p4_show(tab.buf)
+        else
+            update_sidebar()
+        end
+    end
+
+    vim.api.nvim_create_autocmd("WinClosed", {
+        group = M.autocmd_group,
+        callback = function()
+            vim.schedule(repair_panel4)
         end,
     })
 
