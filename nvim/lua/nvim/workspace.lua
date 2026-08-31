@@ -618,8 +618,12 @@ local function toggle_float_panel()
     end
     local is_term = vim.bo[buf].buftype == "terminal"
 
-    local width = math.floor(vim.o.columns * 0.78)
-    local height = math.floor(vim.o.lines * 0.78)
+    local ratio = vim.g.workspace_float_ratio
+    if type(ratio) ~= "number" or ratio <= 0 or ratio > 1 then
+        ratio = 0.78
+    end
+    local width = math.floor(vim.o.columns * ratio)
+    local height = math.floor(vim.o.lines * ratio)
     local col = math.floor((vim.o.columns - width) / 2)
     local row = math.floor((vim.o.lines - height) / 2)
 
