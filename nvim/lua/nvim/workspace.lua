@@ -18,6 +18,23 @@ local function is_editor_buf(buf)
     return true
 end
 
+-- A buffer that is worth floating with F12: a live terminal, or a real file
+-- on disk (absolute path, existing). Excludes scratch/placeholder buffers whose
+-- names look like [foo] and unnamed buffers.
+local function is_floatable_buf(buf)
+    if not vim.api.nvim_buf_is_valid(buf) then
+        return false
+    end
+    if vim.bo[buf].buftype == "terminal" then
+        return true
+    end
+    if vim.bo[buf].buftype ~= "" then
+        return false
+    end
+    local name = vim.api.nvim_buf_get_name(buf)
+    return name:sub(1, 1) == "/" and vim.loop.fs_stat(name) ~= nil
+end
+
 local function create_buf(lines, name)
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -393,36 +410,6 @@ local function term_remove_tab(bufnr)
     update_sidebar()
 end
 
-local function term_toggle()
-    local win = get_p4_win()
-    if not win then return end
-    local current_buf = vim.api.nvim_win_get_buf(win)
-    local showing_term = vim.bo[current_buf].buftype == "terminal"
-
-    if #term.tabs == 0 then
-        open_fresh_terminal()
-        return
-    end
-
-    if not term.active or not term.tabs[term.active] or not vim.api.nvim_buf_is_valid(term.tabs[term.active].buf) then
-        for idx, tab in ipairs(term.tabs) do
-            if vim.api.nvim_buf_is_valid(tab.buf) then
-                term.active = idx
-                p4_show(tab.buf)
-                return
-            end
-        end
-        open_fresh_terminal()
-        return
-    end
-
-    if showing_term then
-        vim.api.nvim_set_current_win(win)
-    else
-        p4_show(term.tabs[term.active].buf)
-    end
-end
-
 local function term_reindex()
     local valid = {}
     for _, tab in ipairs(term.tabs) do
@@ -598,6 +585,63 @@ local function open_terminal_in_buffer_dir()
     open_terminal_in_dir(dir)
 end
 
+-- F12 floats the focused panel: a file (e.g. in Panel 3) or a terminal (in
+-- Panel 4) into a centered bubble window. Pressing F12 again drops the bubble
+-- and returns focus to the panel you were in before.
+M.float_win = nil
+M.float_restore_win = nil
+
+local function close_float_panel()
+    local win = M.float_win
+    M.float_win = nil
+    if win and vim.api.nvim_win_is_valid(win) then
+        pcall(vim.api.nvim_win_close, win, true)
+    end
+    local restore = M.float_restore_win
+    M.float_restore_win = nil
+    if restore and vim.api.nvim_win_is_valid(restore) then
+        pcall(vim.api.nvim_set_current_win, restore)
+    end
+end
+
+local function toggle_float_panel()
+    if M.float_win and vim.api.nvim_win_is_valid(M.float_win) then
+        close_float_panel()
+        return
+    end
+
+    local restore_win = vim.api.nvim_get_current_win()
+    local buf = vim.api.nvim_get_current_buf()
+    if not is_floatable_buf(buf) then
+        notify("Nothing to float here (not a file or terminal).")
+        return
+    end
+    local is_term = vim.bo[buf].buftype == "terminal"
+
+    local width = math.floor(vim.o.columns * 0.78)
+    local height = math.floor(vim.o.lines * 0.78)
+    local col = math.floor((vim.o.columns - width) / 2)
+    local row = math.floor((vim.o.lines - height) / 2)
+
+    local win = vim.api.nvim_open_win(buf, true, {
+        relative = "editor",
+        width = width,
+        height = height,
+        col = col,
+        row = row,
+        style = "minimal",
+        border = "rounded",
+    })
+    M.float_win = win
+    M.float_restore_win = restore_win
+
+    -- In a terminal bubble, drop straight into terminal mode; <Esc> returns to
+    -- terminal-normal mode so F12 can be used to close it.
+    if is_term then
+        vim.cmd("startinsert")
+    end
+end
+
 M.keymaps = {}
 
 local function set_keymap(mode, lhs, rhs, opts)
@@ -624,7 +668,7 @@ setup_p4_terminal_tab_keys = function(buf)
 end
 
 local function setup_panel4_terminal_keys()
-    set_keymap({ "n", "t" }, "<F12>", term_toggle, { desc = "Toggle terminal in Panel 4" })
+    set_keymap({ "n", "t" }, "<F12>", toggle_float_panel, { desc = "Float focused file or terminal (F12 again to close)" })
     set_keymap("n", "<leader>tt", open_terminal_in_empty_dir, { desc = "Open terminal in Panel 4 (node dir or cwd)" })
     set_keymap("n", "<leader>tr", run_current_file, { desc = "Run file in Panel 4 terminal" })
     set_keymap("n", "<leader>tb", open_terminal_in_buffer_dir, { desc = "Open terminal in buffer directory" })
@@ -1000,6 +1044,13 @@ function M.close()
     local had_terminal = #term.tabs > 0
     local wins = M.wins
     M.wins = nil
+
+    -- Drop any open F12 float so it doesn't survive the layout teardown.
+    if M.float_win and vim.api.nvim_win_is_valid(M.float_win) then
+        pcall(vim.api.nvim_win_close, M.float_win, true)
+    end
+    M.float_win = nil
+    M.float_restore_win = nil
 
     local sidebar_win = M.term_sidebar_win
     local term_bufs = {}
