@@ -1,5 +1,20 @@
 local M = {}
 
+-- A "real" editable file buffer (not a terminal, scratch/no-file buffer, or
+-- unnamed buffer). Panel 3 is the editor panel: it should show one of these.
+local function is_editor_buf(buf)
+    if not vim.api.nvim_buf_is_valid(buf) then
+        return false
+    end
+    if vim.bo[buf].buftype ~= "" then
+        return false
+    end
+    if vim.api.nvim_buf_get_name(buf) == "" then
+        return false
+    end
+    return true
+end
+
 local function create_buf(lines, name)
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -632,6 +647,17 @@ function M.open()
         return
     end
 
+    -- Panel 3 is the editor panel. Keep a previously-known editor buffer across
+    -- rebuilds (so closing Panel 4's terminal does not drop it); on a fresh
+    -- open, capture the file that was focused right before \ww was pressed.
+    if not M.editor_buf or not vim.api.nvim_buf_is_valid(M.editor_buf) then
+        M.editor_buf = nil
+        local candidate = vim.api.nvim_get_current_buf()
+        if is_editor_buf(candidate) then
+            M.editor_buf = candidate
+        end
+    end
+
     M.autocmd_group = vim.api.nvim_create_augroup("WorkspaceLayout", { clear = true })
     M.created_bufs = {}
 
@@ -719,12 +745,21 @@ function M.open()
 
     vim.api.nvim_win_set_buf(p2_win, p2_buf)
 
-    local p3_buf = create_buf(
-        { "", "  Panel 3", "  (placeholder)", "" },
-        "[panel-3]"
-    )
-    track_buf(p3_buf)
-    vim.api.nvim_win_set_buf(p3_win, p3_buf)
+    -- Panel 3 is the editor panel: show the file that was open before \ww (or
+    -- the kept editor buffer after a rebuild) instead of a placeholder.
+    local p3_buf
+    if M.editor_buf and vim.api.nvim_buf_is_valid(M.editor_buf) then
+        p3_buf = M.editor_buf
+        vim.api.nvim_win_set_buf(p3_win, p3_buf)
+    else
+        p3_buf = create_buf(
+            { "", "  Panel 3", "  (placeholder)", "" },
+            "[panel-3]"
+        )
+        track_buf(p3_buf)
+        vim.api.nvim_win_set_buf(p3_win, p3_buf)
+    end
+    M.p3_buf = p3_buf
 
     M.wins = {
         [1] = actual_left_win,
@@ -994,6 +1029,8 @@ function M.close()
     clear_workspace_autocmds()
     M.saved_picker = nil
     M.saved_sizes = nil
+    M.editor_buf = nil
+    M.p3_buf = nil
     M._closing = false
 
     if had_terminal then
