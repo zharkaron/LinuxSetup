@@ -1,5 +1,8 @@
 local M = {}
 
+-- Forward declaration so term_new_tab() can call it; assigned after set_keymap().
+local setup_p4_terminal_tab_keys
+
 -- A "real" editable file buffer (not a terminal, scratch/no-file buffer, or
 -- unnamed buffer). Panel 3 is the editor panel: it should show one of these.
 local function is_editor_buf(buf)
@@ -358,6 +361,7 @@ local function term_new_tab(dir, cmd)
         is_shell = tab_is_shell(cmd),
     }
     term.active = #term.tabs
+    setup_p4_terminal_tab_keys(buf)
     update_sidebar()
 end
 
@@ -607,6 +611,16 @@ local function set_keymap(mode, lhs, rhs, opts)
         scope = scope,
         buf = opts.buffer or nil,
     }
+end
+
+-- Bind Tab / Shift-Tab to cycle terminal tabs while standing in a Panel 4
+-- terminal in normal mode. The global <Tab>=bnext/<S-Tab>=bprevious mappings
+-- would otherwise yank the focus to another file and drop the terminal. These
+-- are buffer-local, so they only apply to the terminal buffers and never break
+-- shell tab-completion in insert/terminal mode.
+setup_p4_terminal_tab_keys = function(buf)
+    set_keymap("n", "<Tab>", term_next, { buffer = buf, desc = "Next terminal tab (Panel 4)" })
+    set_keymap("n", "<S-Tab>", term_prev, { buffer = buf, desc = "Previous terminal tab (Panel 4)" })
 end
 
 local function setup_panel4_terminal_keys()
