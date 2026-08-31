@@ -51,6 +51,17 @@ local function toggle_task()
     vim.bo[buf].modifiable = true
     vim.api.nvim_buf_set_lines(buf, row - 1, row, false, { new_line })
     vim.bo[buf].modifiable = false
+
+    if M.task_file then
+        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local f = io.open(M.task_file, "w")
+        if f then
+            for _, l in ipairs(lines) do
+                f:write(l, "\n")
+            end
+            f:close()
+        end
+    end
 end
 
 local function ensure_task_file()
@@ -222,7 +233,7 @@ local function toggle_nvimtree()
 end
 
 local term = {
-    tabs = {},
+    tabs = {}, -- each entry: { buf = bufnr, label = string }
     active = nil,
 }
 M.term = term
@@ -235,6 +246,42 @@ local function get_p4_win()
     return nil
 end
 
+local function get_sidebar_win()
+    local win = M.term_sidebar_win
+    if win and vim.api.nvim_win_is_valid(win) then
+        return win
+    end
+    return nil
+end
+
+local function update_sidebar()
+    local win = get_sidebar_win()
+    if not win then
+        return
+    end
+    local sbuf = M.term_sidebar_buf
+    if not vim.api.nvim_buf_is_valid(sbuf) then
+        return
+    end
+
+    local labels = {}
+    for idx, tab in ipairs(term.tabs) do
+        local mark = (idx == term.active) and "*" or " "
+        labels[#labels + 1] = string.format("%s%d:%s", mark, idx, tab.short_label or tab.label or "")
+    end
+    labels[#labels + 1] = " +new"
+
+    local line = table.concat(labels, "  ")
+    local max = vim.api.nvim_win_get_width(win)
+    if #line > max then
+        line = line:sub(1, max - 1)
+    end
+
+    vim.bo[sbuf].modifiable = true
+    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, { line })
+    vim.bo[sbuf].modifiable = false
+end
+
 local function p4_show(buf)
     local win = get_p4_win()
     if not win then return end
@@ -242,6 +289,39 @@ local function p4_show(buf)
     vim.api.nvim_win_set_buf(win, buf)
     vim.bo[buf].modifiable = false
     vim.api.nvim_set_current_win(win)
+    update_sidebar()
+end
+
+local function tab_label(dir, cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    if plain_cmd == "" or plain_cmd == vim.o.shell then
+        return "shell " .. (dir or vim.fn.getcwd())
+    end
+    return plain_cmd
+end
+
+local function tab_is_shell(cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    return plain_cmd == "" or plain_cmd == vim.o.shell
+end
+
+local function tab_short_label(dir, cmd)
+    local plain_cmd = (cmd or ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+    if plain_cmd == "" or plain_cmd == vim.o.shell then
+        return "shell"
+    end
+    local trimmed = plain_cmd
+    local ispy = trimmed:find("[%w_%-%.]+%.py") ~= nil
+    if ispy then
+        local file = trimmed:match("([%w_%-%.]+%.py)")
+        if file then
+            return file
+        end
+    end
+    if #trimmed > 14 then
+        return trimmed:sub(1, 14) .. ".."
+    end
+    return trimmed
 end
 
 local function term_new_tab(dir, cmd)
@@ -251,18 +331,47 @@ local function term_new_tab(dir, cmd)
         return
     end
     local buf = vim.api.nvim_create_buf(false, true)
-    vim.bo[buf].buftype = "terminal"
-    vim.bo[buf].swapfile = false
-    vim.bo[buf].bufhidden = "hide"
     vim.api.nvim_win_set_buf(win, buf)
     vim.api.nvim_set_current_win(win)
     vim.fn.termopen(cmd or vim.o.shell, { cwd = dir or vim.fn.getcwd() })
-    term.tabs[#term.tabs + 1] = buf
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].bufhidden = "hide"
+    term.tabs[#term.tabs + 1] = {
+        buf = buf,
+        label = tab_label(dir, cmd),
+        short_label = tab_short_label(dir, cmd),
+        is_shell = tab_is_shell(cmd),
+    }
     term.active = #term.tabs
+    update_sidebar()
 end
 
 local function open_terminal_in_dir(dir)
     term_new_tab(dir, vim.o.shell)
+end
+
+local function open_fresh_terminal()
+    open_terminal_in_dir(vim.fn.getcwd())
+end
+
+local function term_remove_tab(bufnr)
+    local idx = nil
+    for i, tab in ipairs(term.tabs) do
+        if tab.buf == bufnr then
+            idx = i
+            break
+        end
+    end
+    if not idx then
+        return
+    end
+    table.remove(term.tabs, idx)
+    if term.active == idx then
+        term.active = nil
+    elseif term.active and term.active > idx then
+        term.active = term.active - 1
+    end
+    update_sidebar()
 end
 
 local function term_toggle()
@@ -272,45 +381,46 @@ local function term_toggle()
     local showing_term = vim.bo[current_buf].buftype == "terminal"
 
     if #term.tabs == 0 then
-        open_terminal_in_dir(vim.fn.getcwd())
+        open_fresh_terminal()
         return
     end
 
-    if not term.active or not term.tabs[term.active] or not vim.api.nvim_buf_is_valid(term.tabs[term.active]) then
-        for idx, buf in ipairs(term.tabs) do
-            if vim.api.nvim_buf_is_valid(buf) then
+    if not term.active or not term.tabs[term.active] or not vim.api.nvim_buf_is_valid(term.tabs[term.active].buf) then
+        for idx, tab in ipairs(term.tabs) do
+            if vim.api.nvim_buf_is_valid(tab.buf) then
                 term.active = idx
-                p4_show(buf)
+                p4_show(tab.buf)
                 return
             end
         end
-        open_terminal_in_dir(vim.fn.getcwd())
+        open_fresh_terminal()
         return
     end
 
     if showing_term then
         vim.api.nvim_set_current_win(win)
     else
-        p4_show(term.tabs[term.active])
+        p4_show(term.tabs[term.active].buf)
     end
 end
 
 local function term_reindex()
     local valid = {}
-    for _, buf in ipairs(term.tabs) do
-        if vim.api.nvim_buf_is_valid(buf) then
-            valid[#valid + 1] = buf
+    for _, tab in ipairs(term.tabs) do
+        if vim.api.nvim_buf_is_valid(tab.buf) then
+            valid[#valid + 1] = tab
         end
     end
-    local active_buf = term.active and term.tabs[term.active] or nil
+    local active_tab = term.active and term.tabs[term.active] or nil
     term.tabs = valid
     term.active = nil
-    for idx, buf in ipairs(term.tabs) do
-        if buf == active_buf then
+    for idx, tab in ipairs(term.tabs) do
+        if tab == active_tab then
             term.active = idx
             break
         end
     end
+    update_sidebar()
 end
 
 local function term_next()
@@ -319,7 +429,7 @@ local function term_next()
     local n = term.active or 0
     n = n % #term.tabs + 1
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function term_prev()
@@ -328,17 +438,17 @@ local function term_prev()
     local n = (term.active or 2) - 1
     if n < 1 then n = #term.tabs end
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function term_goto(n)
     term_reindex()
-    if not term.tabs[n] or not vim.api.nvim_buf_is_valid(term.tabs[n]) then
+    if not term.tabs[n] or not vim.api.nvim_buf_is_valid(term.tabs[n].buf) then
         vim.notify("workspace: terminal tab " .. n .. " not open")
         return
     end
     term.active = n
-    p4_show(term.tabs[n])
+    p4_show(term.tabs[n].buf)
 end
 
 local function get_tree_node_path()
@@ -623,9 +733,31 @@ function M.open()
         [4] = bottom_right_win,
     }
 
+    local tabbar_height = 1
+    vim.api.nvim_set_current_win(bottom_right_win)
+    before = win_set()
+    vim.cmd("belowright 2split")
+    new_wins = find_new_wins(before)
+    local sidebar_win = new_wins[1]
+    vim.api.nvim_win_set_height(sidebar_win, tabbar_height)
+    vim.api.nvim_set_current_win(bottom_right_win)
+
+    local sidebar_buf = vim.api.nvim_create_buf(false, true)
+    track_buf(sidebar_buf)
+    vim.api.nvim_buf_set_name(sidebar_buf, "[terminals]")
+    vim.bo[sidebar_buf].modifiable = false
+    vim.bo[sidebar_buf].bufhidden = "hide"
+    vim.bo[sidebar_buf].swapfile = false
+    vim.api.nvim_win_set_buf(sidebar_win, sidebar_buf)
+    vim.wo[sidebar_win].winfixheight = true
+
+    M.term_sidebar_win = sidebar_win
+    M.term_sidebar_buf = sidebar_buf
+
     register_lock(actual_left_win, left_buf, true, false)
     register_lock(p2_win, p2_buf, false, false)
     register_lock(bottom_right_win, bottom_buf, false, true)
+    register_lock(sidebar_win, sidebar_buf, false, false)
 
     set_keymap("n", "<leader>e", toggle_nvimtree, { silent = true })
 
@@ -645,6 +777,169 @@ function M.open()
         end,
     })
 
+    vim.api.nvim_create_autocmd("TermClose", {
+        group = M.autocmd_group,
+        callback = function(args)
+            vim.schedule(function()
+                local buf = args.buf
+                local closed_idx = nil
+                for i, tab in ipairs(term.tabs) do
+                    if tab.buf == buf then
+                        closed_idx = i
+                        break
+                    end
+                end
+                if not closed_idx then
+                    return
+                end
+                local closed = term.tabs[closed_idx]
+
+                -- Run tabs keep their output visible so it can be read. If the
+                -- panel window got taken over while the job was running (e.g. a
+                -- plugin reacted to the exit), reseat the run terminal back into
+                -- Panel 4 so its output stays on screen.
+                if not closed.is_shell then
+                    local p4 = get_p4_win()
+                    if p4 and vim.api.nvim_win_is_valid(p4) then
+                        local cur = vim.api.nvim_win_get_buf(p4)
+                        if cur ~= buf then
+                            vim.api.nvim_win_set_buf(p4, buf)
+                        end
+                        vim.api.nvim_set_current_win(p4)
+                        term.active = closed_idx
+                        update_sidebar()
+                    end
+                    return
+                end
+
+                -- Shell closed: drop it from the list. Never auto-create a new
+                -- terminal here (an out-of-place one just scrambles the tabs),
+                -- and never leave the panel empty if other tabs remain.
+                term_remove_tab(buf)
+                if #term.tabs == 0 then
+                    -- Panel would be empty: seed a fresh shell at the natural slot.
+                    open_fresh_terminal()
+                    term.active = #term.tabs
+                    p4_show(term.tabs[#term.tabs].buf)
+                    return
+                end
+                if not get_p4_win() then
+                    return
+                end
+                -- Focus the most recently-active tab that is still valid.
+                local focus = term.tabs[term.active]
+                if not focus or not vim.api.nvim_buf_is_valid(focus.buf) then
+                    focus = nil
+                    for _, tab in ipairs(term.tabs) do
+                        if vim.api.nvim_buf_is_valid(tab.buf) then
+                            focus = tab
+                            break
+                        end
+                    end
+                end
+                if focus then
+                    for i, tab in ipairs(term.tabs) do
+                        if tab == focus then
+                            term.active = i
+                            p4_show(tab.buf)
+                        end
+                    end
+                end
+            end)
+        end,
+    })
+
+    -- If Panel 4's main terminal window is torn down externally (e.g. a plugin
+    -- reacting to a finished terminal), recreate it so the layout is not left
+    -- permanently broken and the sidebar is not orphaned.
+    local function panel4_valid()
+        local p4 = M.wins and M.wins[4]
+        return p4 and p4 ~= 0 and vim.api.nvim_win_is_valid(p4)
+    end
+    -- Deterministically rebuild the whole workspace layout when Panel 4 is
+    -- lost. Neovim re-displays hidden terminal buffers in a full-width window
+    -- when P4's window closes, which swallows Panel 1; patch-work split resizing
+    -- cannot reliably undo that, so we close the damaged windows and rebuild.
+    local function rebuild_layout()
+        local old_term_tabs = term.tabs
+        local old_active = term.active
+
+        M.wins = nil
+        M.term_sidebar_win = nil
+        M.term_sidebar_buf = nil
+        M.locked = {}
+
+        -- Delete the old scratch buffers (task/panel placeholders/sidebar) so
+        -- M.open() can recreate them without E95 name collisions. Terminal tab
+        -- buffers are kept and re-attached afterwards.
+        for _, buf in ipairs(M.created_bufs or {}) do
+            if vim.api.nvim_buf_is_valid(buf) then
+                pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            end
+        end
+        M.created_bufs = {}
+
+        -- Close every window except the last so the damaged layout (including
+        -- the full-width window Neovim spawns for a re-displayed terminal) is
+        -- fully cleared before M.open() rebuilds from a clean slate.
+        local all = vim.api.nvim_list_wins()
+        while #all > 1 do
+            pcall(vim.api.nvim_win_close, all[1], true)
+            all = vim.api.nvim_list_wins()
+        end
+
+        -- Rebuild the standard layout.
+        local ok_rb, err_rb = pcall(M.open)
+        if not ok_rb then
+            vim.notify("workspace: layout rebuild failed: " .. tostring(err_rb), vim.log.levels.ERROR)
+            return
+        end
+
+        -- Re-attach the previously open terminal tabs to the fresh P4 window.
+        local new_p4 = M.wins and M.wins[4]
+        if new_p4 and vim.api.nvim_win_is_valid(new_p4) then
+            term.tabs = old_term_tabs
+            term.active = old_active
+            -- Drop the placeholder shell M.open() seeded, keep only real tabs.
+            local shell_buf = vim.api.nvim_win_get_buf(new_p4)
+            for idx = #term.tabs, 1, -1 do
+                if term.tabs[idx].buf == shell_buf then
+                    table.remove(term.tabs, idx)
+                end
+            end
+            local tab = term.active and term.tabs[term.active]
+            if not tab or not vim.api.nvim_buf_is_valid(tab.buf) then
+                for _, t in ipairs(term.tabs) do
+                    if vim.api.nvim_buf_is_valid(t.buf) then
+                        tab = t
+                        break
+                    end
+                end
+            end
+            if tab and vim.api.nvim_buf_is_valid(tab.buf) then
+                p4_show(tab.buf)
+            end
+            update_sidebar()
+        end
+    end
+
+    vim.api.nvim_create_autocmd("WinClosed", {
+        group = M.autocmd_group,
+        callback = function()
+            if M._closing then
+                return
+            end
+            vim.schedule(function()
+                if not M._closing and not panel4_valid() then
+                    pcall(rebuild_layout)
+                end
+            end)
+        end,
+    })
+
+    update_sidebar()
+    open_fresh_terminal()
+
     vim.api.nvim_set_current_win(actual_left_win)
 end
 
@@ -652,16 +947,38 @@ function M.close()
     if not M.wins then
         return
     end
+    M._closing = true
     local had_terminal = #term.tabs > 0
     local wins = M.wins
     M.wins = nil
+
+    local sidebar_win = M.term_sidebar_win
+    local term_bufs = {}
+    for _, tab in ipairs(term.tabs) do
+        term_bufs[#term_bufs + 1] = tab.buf
+    end
     term.tabs = {}
     term.active = nil
+    M.term_sidebar_buf = nil
+    M.term_sidebar_win = nil
     M.locked = {}
 
-    for _, w in ipairs(wins) do
+    local all_wins = vim.tbl_filter(function(w)
+        return vim.api.nvim_win_is_valid(w)
+    end, wins)
+    if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+        all_wins[#all_wins + 1] = sidebar_win
+    end
+
+    for _, w in ipairs(all_wins) do
         if vim.api.nvim_win_is_valid(w) and #vim.api.nvim_list_wins() > 1 then
             pcall(vim.api.nvim_win_close, w, true)
+        end
+    end
+
+    for _, buf in ipairs(term_bufs) do
+        if vim.api.nvim_buf_is_valid(buf) then
+            pcall(vim.api.nvim_buf_delete, buf, { force = true })
         end
     end
 
@@ -677,6 +994,7 @@ function M.close()
     clear_workspace_autocmds()
     M.saved_picker = nil
     M.saved_sizes = nil
+    M._closing = false
 
     if had_terminal then
         vim.notify("workspace: closed. Terminal tabs were not persisted.")

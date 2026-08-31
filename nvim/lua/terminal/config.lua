@@ -1,6 +1,6 @@
 require("toggleterm").setup({
   size = 20,
-  open_mapping = [[<leader>tt]],  -- leader+tt to toggle terminal
+  open_mapping = nil, -- \tt is owned by the workspace Panel 4 terminal system
   hide_numbers = true,
   shade_filetypes = {},
   shade_terminals = true,
