@@ -24,6 +24,14 @@ require("codecompanion").setup({
           end,
         },
       },
+      tools = {
+        opts = {
+          -- Let the model edit your file directly. When it proposes changes,
+          -- CodeCompanion shows a diff you review in the chat before applying
+          -- (g1 always-accept / g2 accept / g3 reject / g4 cancel).
+          default_tools = { "insert_edit_into_file" },
+        },
+      },
     },
     inline = { adapter = "ollama" },
     cmd = { adapter = "ollama" },
@@ -32,6 +40,14 @@ require("codecompanion").setup({
     log_level = "ERROR",
   },
 })
+
+-- Auto-attach the currently-focused file to every chat (not just the workspace
+-- panel), so the model can always read the file the user is working on. Chat
+-- is wrapped lazily; safe to call before CodeCompanion has been loaded.
+local ok_ctx, ctx = pcall(require, "nvim.ai.context")
+if ok_ctx and type(ctx.attach_all) == "function" then
+    pcall(ctx.attach_all)
+end
 
 -- Quick model switch
 vim.api.nvim_create_user_command("SetModel", function(opts)

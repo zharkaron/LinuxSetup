@@ -113,4 +113,36 @@ function M.attach(chat, workspace)
     end)
 end
 
+-- Wrapping CodeCompanion's chat factory, because every chat (workspace panel,
+-- global mapping/toggle, fork/resume, ...) is created through cc.chat() in this
+-- version. The wrap is installed lazily and each chat is still guarded by the
+-- _auto_context_attached flag, so combining the workspace panel's own attach
+-- with this wrap can never double-attach. This guarantees the model always sees
+-- the currently-focused file, even for chats opened outside the workspace panel.
+local chat_wrapped = false
+
+---Install a global auto-attach for every Chat CodeCompanion creates.
+function M.attach_all()
+    if chat_wrapped then
+        return
+    end
+    chat_wrapped = true
+
+    local ok, cc = pcall(require, "codecompanion")
+    if not ok or not cc or type(cc.chat) ~= "function" then
+        return
+    end
+    local original_chat = cc.chat
+    cc.chat = function(...)
+        local chat = original_chat(...)
+        if chat and chat.bufnr then
+            local ok_ws, workspace = pcall(require, "nvim.workspace")
+            if ok_ws and workspace then
+                pcall(M.attach, chat, workspace)
+            end
+        end
+        return chat
+    end
+end
+
 return M
