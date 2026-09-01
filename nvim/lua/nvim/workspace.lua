@@ -18,9 +18,9 @@ local function is_editor_buf(buf)
     return true
 end
 
--- A buffer that is worth floating with F12: a live terminal, or a real file
--- on disk (absolute path, existing). Excludes scratch/placeholder buffers whose
--- names look like [foo] and unnamed buffers.
+-- A buffer that is worth floating with F12: a live terminal, a real file
+-- on disk (absolute path, existing), or the AI chat panel. Excludes other
+-- scratch/placeholder buffers whose names look like [foo] and unnamed buffers.
 local function is_floatable_buf(buf)
     if not vim.api.nvim_buf_is_valid(buf) then
         return false
@@ -28,15 +28,17 @@ local function is_floatable_buf(buf)
     if vim.bo[buf].buftype == "terminal" then
         return true
     end
+    -- Panel 2's AI chat is floatable. Its scratch buffer has a non-empty
+    -- buftype (nofile), so this must be checked before the generic buftype
+    -- rejection below, which would otherwise discard it.
+    if M.chat and M.chat.bufnr == buf then
+        return true
+    end
     if vim.bo[buf].buftype ~= "" then
         return false
     end
     local name = vim.api.nvim_buf_get_name(buf)
     if name:sub(1, 1) == "/" and vim.uv.fs_stat(name) ~= nil then
-        return true
-    end
-    -- Panel 2's AI chat is floatable too.
-    if M.chat and M.chat.bufnr == buf then
         return true
     end
     return false
