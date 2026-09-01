@@ -78,5 +78,5 @@ function _G.NeogitSafePushForce()
     vim.notify("Force push cancelled", vim.log.levels.INFO)
     return
   end
-  vim.cmd("Neogit push")
+  vim.cmd("Neogit push --force-with-lease")
 end

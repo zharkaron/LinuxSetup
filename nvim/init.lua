@@ -1,8 +1,7 @@
 -- init.lua
--- init.lua
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   -- clone lazy.nvim if it doesn't exist
   vim.fn.system({
     "git",

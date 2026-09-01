@@ -13,8 +13,8 @@ require("minuet").setup({
     openai_fim_compatible = {
       api_key = "TERM", -- Ollama ignores auth; any present env var name satisfies it
       name = "Ollama",
-      end_point = "http://localhost:11434/v1/completions",
-      model = "qwen2.5-coder:1.5b",
+      end_point = require("nvim.ai.host").ollama_base(11434) .. "/v1/completions",
+      model = "qwen2.5-coder:7b",
       optional = {
         max_tokens = 56,
         top_p = 0.9,
