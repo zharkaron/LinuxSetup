@@ -95,10 +95,10 @@ local function toggle_task()
     vim.bo[buf].modifiable = false
 
     if M.task_file then
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local all_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         local f = io.open(M.task_file, "w")
         if f then
-            for _, l in ipairs(lines) do
+            for _, l in ipairs(all_lines) do
                 f:write(l, "\n")
             end
             f:close()
@@ -830,8 +830,8 @@ function M.open()
     vim.bo[bottom_buf].bufhidden = "hide"
     vim.api.nvim_win_set_buf(bottom_right_win, bottom_buf)
 
-    local p2_win = nil
-    local p2_buf = nil
+    local p2_win
+    local p2_buf
     local chat_buf = panel2_buf()
     if chat_buf then
         p2_buf = chat_buf
