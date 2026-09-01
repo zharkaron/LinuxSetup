@@ -8,6 +8,15 @@ npairs.setup({
     enable_check_bracket_line = true,
     ignored_next_char = "[%w%.]",    -- ignore letters/dots after cursor
     disable_filetype = { "TelescopePrompt", "vim" }, -- optional: disable in some filetypes
+    fast_wrap = {
+        map = "<M-e>",  -- Alt+e
+        chars = { '(', '[', '{', '"', "'", "<" },
+        keys = 'qwertyuiopasdfghjklzxcvbnm',
+        pattern = [=[[%'%"%)%>%]%)%}%,]]=],
+        check_comma = true,
+        highlight = 'Search',
+        highlight_grey = 'Comment',
+    },
 })
 
 -- HTML: automatically close tags

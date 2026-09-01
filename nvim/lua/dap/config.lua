@@ -9,7 +9,7 @@ dap.adapters.java = function(callback, config)
   local port = config.remote_debug_port or 5005
   local jdtls_path = config.jdtls_path or vim.fn.stdpath("data") .. "/jdtls/jdtls.jar"
 
-  local handle = vim.loop.spawn("java", {
+  local handle = vim.uv.spawn("java", {
     args = {
       "-jar",
       jdtls_path,
@@ -19,27 +19,50 @@ dap.adapters.java = function(callback, config)
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,quiet=y,address=" .. port,
     },
     stdio = { nil, nil, nil },
-    on_exit = function()
-      callback(nil)
-    end,
   }, function(code, signal)
     if code ~= 0 then
       vim.notify("Failed to start jdtls: exit code " .. code, vim.log.levels.ERROR)
     end
   end)
 
-  local i = 0
-  while i < 50 do
-    vim.defer_fn(function()
-      local socket = vim.loop.create_handle()
-      local success = socket:connect(port, "127.0.0.1")
-      if success then
-        socket:close()
-        callback({ type = "server", host = "localhost", port = port })
-      end
-    end, 100)
-    i = i + 1
+  -- Poll the debug port until jdtls listens, then hand the server to DAP.
+  -- Only call callback() once, and stop polling once the server is found.
+  local attempts = 0
+  local max_attempts = 50
+  local done = false
+
+  local function finish(cb_arg)
+    if done then
+      return
+    end
+    done = true
+    callback(cb_arg)
   end
+
+  local function try_connect()
+    if done or attempts >= max_attempts then
+      if not done then
+        vim.notify("Timed out waiting for jdtls debugger on port " .. port, vim.log.levels.ERROR)
+      end
+      return
+    end
+    attempts = attempts + 1
+
+    local socket = vim.uv.new_tcp()
+    socket:connect("127.0.0.1", port, function(err)
+      if not err then
+        socket:close()
+        finish({ type = "server", host = "localhost", port = port })
+      else
+        socket:close()
+        if not done then
+          vim.defer_fn(try_connect, 500)
+        end
+      end
+    end)
+  end
+
+  try_connect()
 end
 
 dap.configurations.java = {

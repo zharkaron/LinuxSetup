@@ -32,7 +32,14 @@ local function is_floatable_buf(buf)
         return false
     end
     local name = vim.api.nvim_buf_get_name(buf)
-    return name:sub(1, 1) == "/" and vim.loop.fs_stat(name) ~= nil
+    if name:sub(1, 1) == "/" and vim.uv.fs_stat(name) ~= nil then
+        return true
+    end
+    -- Panel 2's AI chat is floatable too.
+    if M.chat and M.chat.bufnr == buf then
+        return true
+    end
+    return false
 end
 
 local function create_buf(lines, name)
@@ -88,10 +95,10 @@ local function toggle_task()
     vim.bo[buf].modifiable = false
 
     if M.task_file then
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local all_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         local f = io.open(M.task_file, "w")
         if f then
-            for _, l in ipairs(lines) do
+            for _, l in ipairs(all_lines) do
                 f:write(l, "\n")
             end
             f:close()
@@ -704,6 +711,37 @@ local function clear_workspace_autocmds()
     M.autocmd_group = nil
 end
 
+M.chat = nil
+
+-- Destroy the embedded AI chat (if any) and its buffer. Safe to call when no
+-- chat is present. CodeCompanion's Chat:close() tears down the buffer, its
+-- autocommands and the chat registry entry for us.
+local function close_chat()
+    local chat = M.chat
+    M.chat = nil
+    if chat and type(chat.close) == "function" then
+        pcall(chat.close, chat)
+    end
+end
+
+-- Return the buffer to display in Panel 2 (the AI chat). A hidden codecompanion
+-- chat is created once and embedded; the same buffer is reused across rebuilds.
+local function panel2_buf()
+    if M.chat and M.chat.bufnr and vim.api.nvim_buf_is_valid(M.chat.bufnr) then
+        return M.chat.bufnr
+    end
+    local ok, cc = pcall(require, "codecompanion")
+    if not ok then
+        return nil
+    end
+    local ok_chat, chat = pcall(cc.chat, { hidden = true })
+    if not ok_chat or not chat or not chat.bufnr or not vim.api.nvim_buf_is_valid(chat.bufnr) then
+        return nil
+    end
+    M.chat = chat
+    return chat.bufnr
+end
+
 function M.open()
     if M.wins and M.wins[1] and vim.api.nvim_win_is_valid(M.wins[1]) then
         return
@@ -792,18 +830,25 @@ function M.open()
     vim.bo[bottom_buf].bufhidden = "hide"
     vim.api.nvim_win_set_buf(bottom_right_win, bottom_buf)
 
-    local p2_buf = create_buf(
-        { "", "  Panel 2", "  (placeholder)", "" },
-        "[panel-2]"
-    )
-    track_buf(p2_buf)
+    local p2_win
+    local p2_buf
+    local chat_buf = panel2_buf()
+    if chat_buf then
+        p2_buf = chat_buf
+    else
+        p2_buf = create_buf(
+            { "", "  Panel 2", "  (AI chat unavailable)", "" },
+            "[panel-2]"
+        )
+        track_buf(p2_buf)
+    end
     vim.api.nvim_set_current_win(top_right_win)
 
     before = win_set()
     vim.cmd(p2_width .. "vsplit")
     new_wins = find_new_wins(before)
     local p3_win = new_wins[1]
-    local p2_win = top_right_win
+    p2_win = top_right_win
 
     vim.api.nvim_win_set_buf(p2_win, p2_buf)
 
@@ -1046,6 +1091,7 @@ function M.close()
     end
     M._closing = true
     local had_terminal = #term.tabs > 0
+    close_chat()
     local wins = M.wins
     M.wins = nil
 
