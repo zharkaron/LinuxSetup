@@ -741,6 +741,12 @@ local function panel2_buf()
         return nil
     end
     M.chat = chat
+    -- Auto-attach the currently-focused file to each chat message so the model
+    -- can see what the user is working on.
+    local ok_ctx, ctx = pcall(require, "nvim.ai.context")
+    if ok_ctx and type(ctx.attach) == "function" then
+        pcall(ctx.attach, chat, M)
+    end
     return chat.bufnr
 end
 
@@ -911,6 +917,17 @@ function M.open()
         group = M.autocmd_group,
         callback = function()
             vim.schedule(enforce_lock)
+            -- Track the most recently focused real file buffer for the AI chat's
+            -- auto-context so it follows whichever file the user is editing.
+            local ok_ctx, ctx = pcall(require, "nvim.ai.context")
+            if ok_ctx and ctx then
+                local buf = vim.api.nvim_get_current_buf()
+                if vim.api.nvim_buf_is_valid(buf)
+                    and vim.bo[buf].buftype == ""
+                    and vim.api.nvim_buf_get_name(buf) ~= "" then
+                    ctx.current_file = buf
+                end
+            end
         end,
     })
 
