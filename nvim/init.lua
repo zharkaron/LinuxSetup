@@ -23,6 +23,7 @@ require("lazy").setup("plugins") -- adjust path if your plugins.lua is elsewhere
 require("nvim.config")
 require("nvim.style")
 require("nvim.keys")
+require("nvim.preview") -- provides :ThemePreview
 
 -- Standalone 4-panel workspace layout (for testing; toggle on/off)
 require("nvim.workspace_lab").setup()
@@ -35,6 +36,12 @@ require("treesitter.config")
 require("treesitter.style")
 require("treesitter.keys")
 
+
+-- bufferline
+require("bufferline.style")
+
+-- noice (cmdline / messages / notifications / LSP progress)
+require("noice.style")
 
 -- nvimtree
 require("nvimtree.config")
@@ -101,6 +108,7 @@ require("dap.config")
 
 -- telescope
 require("telescope.setup")
+require("telescope.style")
 
 -- harpoon
 require("harpoon.setup")
