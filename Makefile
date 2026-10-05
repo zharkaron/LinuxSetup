@@ -11,7 +11,17 @@ EXPECTED_FILES := \
 	kitty/appearance/tab.conf \
 	kitty/appearance/artemis.conf \
 	nvim/init.lua \
+	nvim/colors/artemis.lua \
 	nvim/lua/plugins.lua \
+	nvim/lua/nvim/palette.lua \
+	nvim/lua/nvim/style.lua \
+	nvim/lua/nvim/preview.lua \
+	nvim/lua/telescope/style.lua \
+	nvim/lua/nvimtree/style.lua \
+	nvim/lua/gitsigns/style.lua \
+	nvim/lua/neogit/style.lua \
+	nvim/lua/bufferline/style.lua \
+	nvim/lua/noice/style.lua \
 	nvim/lazy-lock.json \
 	zsh/zshrc \
 	zsh/config.zsh \

@@ -151,8 +151,45 @@ Included plugin areas:
 - Gitsigns, Neogit, Harpoon, Undotree
 - Bufferline, Noice, which-key, Todo Comments, Trouble, Aerial
 - vim-illuminate, nvim-surround
-- Gruvbox
+- Artemis x Mint colorscheme (local, in `nvim/colors/artemis.lua`)
 - Lualine
+
+### Colours
+
+Neovim and Kitty share one palette. The colours come from the Kitty theme
+`kitty/appearance/artemis.conf`, and the same hex values are repeated in
+`nvim/lua/nvim/palette.lua` so both render identically:
+
+- background `#1e1f21`, foreground `#c7c7c7`
+- cursor `#a1ff9e`, selection `#4b5668`
+- red `#ff4f79`, green `#a1ff9e`, yellow `#f7ff6b`, blue `#9b5de5`,
+  cyan `#6fffe9`, magenta `#88c0d0`
+
+Files:
+
+- `nvim/lua/nvim/palette.lua` — the palette. Change this and
+  `kitty/appearance/artemis.conf` together.
+- `nvim/colors/artemis.lua` — the colorscheme: editor UI, syntax, Treesitter
+  captures, LSP semantic tokens, diff and diagnostics.
+- `nvim/lua/nvim/style.lua` — applies the colorscheme and sets up Lualine.
+  The Lualine theme copies the zsh prompt's colours, so the statusline shows the
+  mode, git branch, a yellow path and a magenta branch just like the shell.
+
+Per-plugin highlight groups live next to their existing config:
+
+- `nvim/lua/telescope/style.lua`
+- `nvim/lua/nvimtree/style.lua`
+- `nvim/lua/gitsigns/style.lua`
+- `nvim/lua/neogit/style.lua`
+- `nvim/lua/bufferline/style.lua`
+- `nvim/lua/noice/style.lua`
+
+To change the colour scheme, edit `nvim/lua/nvim/palette.lua` and apply it
+inside Neovim with `:colorscheme artemis`.
+
+Font settings live only in `kitty/appearance/fonts.conf`. Do not add
+`font_size` to a Kitty colour theme: `kitty.conf` includes `fonts.conf` first,
+so a later `font_size` silently wins.
 
 Useful command inside Neovim:
 

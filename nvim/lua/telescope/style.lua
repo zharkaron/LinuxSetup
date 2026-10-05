@@ -1,8 +1,23 @@
 -- lua/telescope/style.lua
-vim.cmd([[
-  highlight TelescopeBorder guifg=#665c54
-  highlight TelescopePromptBorder guifg=#928374
-  highlight TelescopeResultsBorder guifg=#504945
-  highlight TelescopePreviewBorder guifg=#3c3836
-  highlight TelescopeSelection guibg=#3c3836 guifg=#ebdbb2
-]])
+-- Telescope in the terminal palette instead of the old gruvbox hex values.
+
+local p = require("nvim.palette")
+
+local function hl(name, val)
+  vim.api.nvim_set_hl(0, name, val)
+end
+
+hl("TelescopeBorder", { fg = p.border, bg = p.surface.s0 })
+hl("TelescopePromptBorder", { fg = p.prompt.path, bg = p.surface.s0 })
+hl("TelescopeResultsBorder", { fg = p.divider, bg = p.surface.s0 })
+hl("TelescopePreviewBorder", { fg = p.border, bg = p.surface.s0 })
+hl("TelescopeSelection", { fg = p.sel_fg, bg = p.sel_bg })
+hl("TelescopeSelectionCaret", { fg = p.prompt.path, bg = p.sel_bg })
+hl("TelescopeMultiSelection", { fg = p.ansi.green, bg = p.surface.s0 })
+hl("TelescopeMultiIcon", { fg = p.ansi.green, bg = p.surface.s0 })
+hl("TelescopeMatchingWord", { fg = p.ansi.yellow, bold = true })
+hl("TelescopePromptPrefix", { fg = p.ansi.green, bg = p.surface.s0 })
+hl("TelescopePromptCounter", { fg = p.gray, bg = p.surface.s0 })
+hl("TelescopeTitle", { fg = p.prompt.git, bg = p.surface.s0, bold = true })
+hl("TelescopeResultsTitle", { fg = p.prompt.git, bg = p.surface.s0, bold = true })
+hl("TelescopePreviewTitle", { fg = p.prompt.git, bg = p.surface.s0, bold = true })

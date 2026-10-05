@@ -173,9 +173,6 @@ return {
     },
   },
 
-  -- Colorscheme
-  { "morhetz/gruvbox" },
-
   -- Statusline
   {
     "nvim-lualine/lualine.nvim",
@@ -208,6 +205,10 @@ return {
           show_close_icon = false,
           numbers = "ordinal",
           diagnostics = "nvim_lsp",
+          -- Powerline separators, matching kitty's tab_powerline_style angled.
+          separator_style = "angled",
+          show_separator = false,
+          -- Colours live in lua/bufferline/style.lua.
         },
       })
     end,

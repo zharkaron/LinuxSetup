@@ -1,4 +1,7 @@
--- Apply your style preferences for terminal buffers
+-- lua/terminal/style.lua
+-- Apply your style preferences for terminal buffers.
+-- Colours come from g:terminal_color_0..15, set by lua/nvim/palette.lua, so
+-- :terminal and toggleterm use the same 16 colours as kitty.
 vim.cmd([[
   augroup TerminalStyle
     autocmd!
