@@ -34,7 +34,7 @@ declare -gA PKG_COMMAND_MAP=(
     [notmuch]="notmuch notmuch notmuch"
     [node]="nodejs"
     [npm]="npm"
-    [pandoc]="pandoc"
+    [pandoc]="pandoc pandoc-cli pandoc"
     [nvim]="neovim"
     [pass]="pass pass pass"
     [pip3]="python3-pip python3-pip python-pip"
@@ -104,10 +104,10 @@ load_package_manifest() {
     case "$manager" in
         apt)
             PKG_REQUIRED_PACKAGES=(
-                zsh git curl tar shellcheck luarocks build-essential
+                zsh git curl tar unzip shellcheck luarocks build-essential
                 sshpass xinput ripgrep fd-find nodejs npm
                 python3 python3-pip wl-clipboard xclip pandoc
-                fzf zoxide eza bat
+                fzf zoxide eza bat powerline-fonts default-jdk
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(
@@ -117,10 +117,10 @@ load_package_manifest() {
             ;;
         dnf)
             PKG_REQUIRED_PACKAGES=(
-                zsh git curl tar ShellCheck luarocks
+                zsh git curl tar unzip ShellCheck luarocks
                 gcc gcc-c++ make sshpass xinput ripgrep fd-find
-                nodejs npm python3 python3-pip wl-clipboard xclip pandoc
-                fzf zoxide eza bat
+                nodejs npm python3 python3-pip wl-clipboard xclip pandoc-cli
+                fzf zoxide eza bat powerline-fonts java-latest-openjdk-devel
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools; availability depends on enabled repos"
             PKG_OPTIONAL_PACKAGES=(
@@ -130,10 +130,10 @@ load_package_manifest() {
             ;;
         pacman)
             PKG_REQUIRED_PACKAGES=(
-                zsh git curl tar shellcheck luarocks base-devel
+                zsh git curl tar unzip shellcheck luarocks base-devel
                 sshpass xorg-xinput ripgrep fd
                 nodejs npm python python-pip wl-clipboard xclip pandoc
-                fzf zoxide eza bat
+                fzf zoxide eza bat powerline-fonts jdk-openjdk
             )
             PKG_OPTIONAL_REASON="optional Docker/Compose and mail tools"
             PKG_OPTIONAL_PACKAGES=(

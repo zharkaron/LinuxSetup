@@ -71,15 +71,17 @@ bwunlock() {
     export BW_SESSION=$(NODE_NO_WARNINGS=1 bw unlock --raw )
 }
 
-# Windows paths (WSL)
-export WINHOME="/mnt/c/Users/zharkaron"
-alias doc='cd "$WINHOME/Documents"'
-alias down='cd "$WINHOME/Downloads"'
-alias desk='cd "$WINHOME/Desktop"'
+# Windows paths (WSL only — skipped on native Linux desktops)
+if [[ -d /mnt/c/Users/zharkaron ]]; then
+    export WINHOME="/mnt/c/Users/zharkaron"
+    alias doc='cd "$WINHOME/Documents"'
+    alias down='cd "$WINHOME/Downloads"'
+    alias desk='cd "$WINHOME/Desktop"'
 
-# Quick copy: cp file → Windows Documents
-cpdoc() { cp -v "$1" "$WINHOME/Documents/"; }
-cpdown() { cp -v "$1" "$WINHOME/Downloads/"; }
+    # Quick copy: cp file → Windows Documents
+    cpdoc() { cp -v "$1" "$WINHOME/Documents/"; }
+    cpdown() { cp -v "$1" "$WINHOME/Downloads/"; }
+fi
 
 # forgit: fuzzy git operations (glo, gca, gcf, etc. — type g + tab to see all)
 if [[ -f "$HOME/.forgit/forgit.plugin.zsh" ]]; then

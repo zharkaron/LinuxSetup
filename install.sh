@@ -9,6 +9,21 @@ FORCE=false
 declare -a SKIP_SECTIONS=()
 ORIGINAL_ARGS=("$@")
 
+show_help() {
+    cat <<'EOF'
+Usage: ./install.sh [flags]
+
+Flags:
+  --dry-run              Print what would happen without changing anything.
+                         Does not require root, so it can be run unprivileged.
+  --force                Reinstall components even if they already exist.
+  --skip-sections LIST   Comma-separated sections to skip. Available sections:
+                         packages,neovim,kitty,jdtls,configs,zsh,terminal,shell,
+                         fonts,bitwarden
+  -h, --help             Show this help.
+EOF
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
@@ -18,6 +33,7 @@ while [[ $# -gt 0 ]]; do
             IFS=',' read -ra SKIP_SECTIONS <<< "$1"
             shift
             ;;
+        -h|--help) show_help; exit 0 ;;
         *)
             shift
             ;;
@@ -46,9 +62,20 @@ section_is_skipped() {
 # ---------------------------------------------
 # Re-run as root if needed
 # ---------------------------------------------
-if [[ $EUID -ne 0 ]]; then
+# --dry-run stays unprivileged on purpose: it only prints, so requiring a
+# password just to preview the run defeats the point.
+if [[ $EUID -ne 0 ]] && ! $DRY_RUN; then
     echo "Re-running installer as root..."
-    exec sudo "$0" "${ORIGINAL_ARGS[@]}"
+    # sudo's env_reset drops the display and session-bus variables that the
+    # desktop integration steps need, so pass them through explicitly.
+    sudo_env=()
+    for session_var in DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS \
+        XDG_RUNTIME_DIR XAUTHORITY; do
+        if [[ -n "${!session_var:-}" ]]; then
+            sudo_env+=("$session_var=${!session_var}")
+        fi
+    done
+    exec sudo "${sudo_env[@]}" "$0" "${ORIGINAL_ARGS[@]}"
 fi
 
 # ---------------------------------------------
@@ -239,7 +266,16 @@ install_latest_kitty() {
     echo "Installing latest Kitty from upstream installer"
     if run curl -fsSL "https://sw.kovidgoyal.net/kitty/installer.sh" -o "$installer"; then
         run chmod 755 "$installer"
-        run sudo -u "$TARGET_USER" HOME="$TARGET_HOME" sh "$installer" "${kitty_args[@]}"
+        # Guarded: the vendor installer is the most likely step to fail, and an
+        # unguarded failure here would abort the whole run under `set -e`.
+        if run sudo -u "$TARGET_USER" HOME="$TARGET_HOME" sh "$installer" "${kitty_args[@]}"; then
+            :
+        else
+            echo "Warning: Kitty installer exited with an error"
+            FAILED_PACKAGES+=("kitty (${KITTY_CHANNEL} upstream) installer")
+            run rm -f "$installer"
+            return
+        fi
 
         kitty_bin="$TARGET_HOME/.local/kitty.app/bin/kitty"
         kitten_bin="$TARGET_HOME/.local/kitty.app/bin/kitten"
@@ -287,6 +323,89 @@ java_major_version() {
     printf '%s\n' "$major"
 }
 
+install_nerd_font() {
+    local font_name="FiraCode Nerd Font"
+    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
+    local fonts_dir="$TARGET_HOME/.local/share/fonts"
+    local tmp_zip
+    local tmp_extract
+
+    if ! $FORCE && command -v fc-list >/dev/null 2>&1 \
+        && fc-list 2>/dev/null | grep -qi "FiraCode Nerd Font"; then
+        INSTALLED_PACKAGES+=("${font_name} (already installed)")
+        return
+    fi
+
+    if ! command -v fc-cache >/dev/null 2>&1; then
+        SKIPPED_ITEMS+=("${font_name}: fontconfig not installed")
+        return
+    fi
+
+    tmp_zip="$(mktemp "/tmp/nerdfont.XXXXXX.zip")"
+    tmp_extract="$(mktemp -d "/tmp/nerdfont.XXXXXX")"
+
+    echo "Installing ${font_name} into $fonts_dir"
+    if run curl -fsSL "$font_url" -o "$tmp_zip"; then
+        run unzip -o -q "$tmp_zip" -d "$tmp_extract"
+        # mktemp -d is 0700 and owned by root, but the copy runs as the target
+        # user, so the directory has to be traversable first.
+        run chmod 755 "$tmp_extract"
+        run sudo -u "$TARGET_USER" mkdir -p "$fonts_dir"
+        if run sudo -u "$TARGET_USER" cp -a "$tmp_extract"/. "$fonts_dir"/; then
+            run sudo -u "$TARGET_USER" fc-cache -f "$fonts_dir"
+            INSTALLED_PACKAGES+=("${font_name} (per-user)")
+        else
+            echo "Warning: failed to copy ${font_name} into $fonts_dir"
+            FAILED_PACKAGES+=("${font_name}")
+        fi
+    else
+        echo "Warning: failed to download ${font_name}"
+        FAILED_PACKAGES+=("${font_name}")
+    fi
+
+    run rm -rf "$tmp_zip" "$tmp_extract"
+}
+
+install_bitwarden_cli() {
+    local bw_url="https://vault.bitwarden.com/download/?app=cli&platform=linux"
+    local install_dir="/opt/bw-cli"
+    local tmp_zip
+    local tmp_extract
+
+    if ! $FORCE && command -v bw >/dev/null 2>&1; then
+        INSTALLED_PACKAGES+=("bitwarden-cli (already on PATH)")
+        return
+    fi
+
+    if ! command -v unzip >/dev/null 2>&1; then
+        SKIPPED_ITEMS+=("bitwarden-cli: unzip is not installed")
+        return
+    fi
+
+    tmp_zip="$(mktemp "/tmp/bw-cli.XXXXXX.zip")"
+    tmp_extract="$(mktemp -d "/tmp/bw-cli.XXXXXX")"
+
+    echo "Installing Bitwarden CLI into $install_dir"
+    if run curl -fsSL "$bw_url" -o "$tmp_zip"; then
+        run unzip -o -q "$tmp_zip" -d "$tmp_extract"
+        if [[ -f "$tmp_extract/bw" ]]; then
+            run rm -rf "$install_dir"
+            run mkdir -p "$install_dir"
+            run install -m 755 "$tmp_extract/bw" "$install_dir/bw"
+            run ln -sf "$install_dir/bw" /usr/local/bin/bw
+            INSTALLED_PACKAGES+=("bitwarden-cli (upstream)")
+        else
+            echo "Warning: Bitwarden CLI archive did not contain a bw binary"
+            FAILED_PACKAGES+=("bitwarden-cli")
+        fi
+    else
+        echo "Warning: failed to download Bitwarden CLI"
+        FAILED_PACKAGES+=("bitwarden-cli")
+    fi
+
+    run rm -rf "$tmp_zip" "$tmp_extract"
+}
+
 install_latest_jdtls() {
     local tmp_archive
     local tmp_extract
@@ -297,8 +416,17 @@ install_latest_jdtls() {
     local config_dir="/usr/local/share/jdtls"
     local java_major
 
-    if ! $FORCE && command -v jdtls >/dev/null 2>&1; then
+    local jdtls_bin
+    jdtls_bin="$(command -v jdtls 2>/dev/null || true)"
+    if ! $FORCE && [[ -n "$jdtls_bin" ]] && [[ -x "$jdtls_bin" ]]; then
         INSTALLED_PACKAGES+=("jdtls (already on PATH)")
+        return
+    fi
+
+    if ! command -v java >/dev/null 2>&1; then
+        echo "Warning: java not found on PATH; JDTLS needs a JDK 21 or newer"
+        echo "  Fedora: install java-latest-openjdk-devel (or java-21-openjdk-devel)"
+        FAILED_PACKAGES+=("jdtls (no java runtime on PATH)")
         return
     fi
 
@@ -341,6 +469,10 @@ install_latest_jdtls() {
         run rm -rf "$install_dir"
         run mkdir -p "$install_dir"
         run cp -a "$jdtls_root"/. "$install_dir"/
+        # `cp -a src/. dest/` also copies the source directory's own mode, and
+        # mktemp -d creates 0700, which would leave /opt/jdtls untraversable.
+        run chmod 755 "$install_dir"
+        run chown -R root:root "$install_dir"
         run mkdir -p "$config_dir"
         run ln -sf "$install_dir/bin/jdtls" /usr/local/bin/jdtls
         INSTALLED_PACKAGES+=("jdtls (${JDTLS_CHANNEL} upstream)")
@@ -596,6 +728,18 @@ section_neovim() {
     install_latest_neovim
 }
 
+section_fonts() {
+    echo ""
+    echo ">>> Section: fonts"
+    install_nerd_font
+}
+
+section_bitwarden() {
+    echo ""
+    echo ">>> Section: bitwarden"
+    install_bitwarden_cli
+}
+
 section_kitty() {
     echo ""
     echo ">>> Section: kitty"
@@ -656,11 +800,35 @@ section_terminal() {
         run update-alternatives --set x-terminal-emulator /usr/local/bin/kitty
     fi
 
-    if command -v gsettings >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" && -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+    local has_graphical_session=false
+    if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+        has_graphical_session=true
+    fi
+
+    if ! $has_graphical_session; then
+        SKIPPED_ITEMS+=("desktop terminal default: no graphical D-Bus session")
+        return
+    fi
+
+    # KDE Plasma keeps the default terminal in kdeglobals, not in GSettings.
+    if command -v kwriteconfig6 >/dev/null 2>&1 || command -v kwriteconfig5 >/dev/null 2>&1; then
+        local kwritecmd="kwriteconfig6"
+        if ! command -v kwriteconfig6 >/dev/null 2>&1; then
+            kwritecmd="kwriteconfig5"
+        fi
+        echo "Setting KDE default terminal to kitty (kdeglobals)"
+        if run sudo -u "$TARGET_USER" HOME="$TARGET_HOME" "$kwritecmd" \
+            --file kdeglobals --group General --key TerminalApplication kitty; then
+            INSTALLED_PACKAGES+=("kde default terminal (kitty)")
+        else
+            echo "Warning: failed to set the KDE default terminal"
+            FAILED_PACKAGES+=("kde default terminal")
+        fi
+    elif command -v gsettings >/dev/null 2>&1; then
         run sudo -u "$TARGET_USER" gsettings set \
             org.gnome.desktop.default-applications.terminal exec kitty || true
     else
-        SKIPPED_ITEMS+=("GNOME terminal default: no graphical D-Bus session")
+        SKIPPED_ITEMS+=("desktop terminal default: neither KDE nor GNOME tooling found")
     fi
 }
 
@@ -680,14 +848,16 @@ section_shell() {
 # ---------------------------------------------
 section_detect_distro
 
-section_is_skipped "packages" || section_packages
-section_is_skipped "neovim"   || section_neovim
-section_is_skipped "kitty"    || section_kitty
-section_is_skipped "jdtls"    || section_jdtls
-section_is_skipped "configs"  || section_configs
-section_is_skipped "zsh"      || section_zsh
-section_is_skipped "terminal" || section_terminal
-section_is_skipped "shell"    || section_shell
+section_is_skipped "packages"  || section_packages
+section_is_skipped "fonts"     || section_fonts
+section_is_skipped "neovim"    || section_neovim
+section_is_skipped "kitty"     || section_kitty
+section_is_skipped "jdtls"     || section_jdtls
+section_is_skipped "bitwarden" || section_bitwarden
+section_is_skipped "configs"   || section_configs
+section_is_skipped "zsh"       || section_zsh
+section_is_skipped "terminal"  || section_terminal
+section_is_skipped "shell"     || section_shell
 
 echo
 echo "Installation summary"

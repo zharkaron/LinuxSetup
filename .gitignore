@@ -2,3 +2,10 @@ oh-my-zsh
 
 # Auto-generated task file created by the workspace layout
 task.md
+
+# Stray Neovim font-metrics log written into the working directory
+missfont.log
+
+# Python bytecode from the qutebrowser config
+__pycache__/
+*.py[cod]

@@ -69,7 +69,9 @@ set print_command = "lpr"
 #  Notmuch integration
 # ---------------------------------------------------------------------------
 set virtual_spoolfile = yes
-set nm_query_window_timeout = 0
+# NeoMutt renamed nm_query_window_timeout to nm_open_timeout; the old name is
+# rejected as an unknown option on current releases.
+set nm_open_timeout = 0
 
 macro index,pager \\ "T~U<enter>;@T<enter>C~/%20<enter>y" "Tag all unread, move to trash"
 
@@ -83,7 +85,14 @@ set crypt_autoencrypt = no
 set crypt_replyencrypt = yes
 set crypt_replysign = yes
 set crypt_opportunistic_encrypt = yes
-source /usr/share/doc/neomutt/examples/gpg.rc
+# Distro example GPG/SSYANG configs. NeoMutt has no conditional `source`, and
+# Fedora's neomutt RPM does not ship /usr/share/doc/neomutt/examples, so these
+# are opt-in: copy the files from your distro's neomutt examples (or the
+# upstream repo) into ~/.config/neomutt/ and uncomment the lines below.
+# if have_crypto_command gpg
+#   source /usr/share/doc/neomutt/examples/gpg.rc
+#   source /usr/share/doc/neomutt/examples/ssypan.rc
+# endif
 
 # ---------------------------------------------------------------------------
 #  Account configs  (gitignored — user-provided)

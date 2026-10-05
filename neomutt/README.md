@@ -52,6 +52,18 @@ Put anything you don't want committed (e.g. passwords, local paths):
 set imap_pass = "app-password-here"
 ```
 
+### GPG/SSYANG example configs
+
+`muttrc` normally sources `/usr/share/doc/neomutt/examples/gpg.rc` and
+`ssypan.rc`. NeoMutt has no conditional `source`, and distro packages do not
+agree on shipping those files — Fedora's `neomutt` RPM omits
+`/usr/share/doc/neomutt/examples` entirely, so sourcing them unconditionally
+makes NeoMutt print an error on every start.
+
+Those two lines are therefore commented out in `muttrc`. If you want them, copy
+the files from your distro's `neomutt` package (or upstream) into
+`~/.config/neomutt/` and uncomment the block at the end of `muttrc`.
+
 ## Required External Tools
 
 | Tool | Purpose | Optional? |

@@ -5,16 +5,46 @@ local virtual_text = require("nvim-dap-virtual-text")
 dapui.setup()
 virtual_text.setup()
 
+-- Locate the jdtls launcher. install.sh puts it in /opt/jdtls and links it
+-- into /usr/local/bin, so prefer whatever is on PATH over guessing a jar path.
+local function resolve_jdtls(config)
+  if config.jdtls_path and config.jdtls_path ~= "" then
+    return config.jdtls_path
+  end
+
+  if vim.fn.executable("jdtls") == 1 then
+    return vim.fn.exepath("jdtls")
+  end
+
+  for _, candidate in ipairs({
+    "/opt/jdtls/bin/jdtls",
+    vim.fn.stdpath("data") .. "/jdtls/bin/jdtls",
+  }) do
+    if vim.fn.filereadable(candidate) == 1 then
+      return candidate
+    end
+  end
+
+  return nil
+end
+
 dap.adapters.java = function(callback, config)
   local port = config.remote_debug_port or 5005
-  local jdtls_path = config.jdtls_path or vim.fn.stdpath("data") .. "/jdtls/jdtls.jar"
+  local data_dir = config.workspace_path or vim.fn.getcwd() .. "/.jdtls"
+  local jdtls = resolve_jdtls(config)
 
-  local handle = vim.uv.spawn("java", {
+  if not jdtls then
+    vim.notify(
+      "Java debugging disabled: jdtls not found. Run ./install.sh, or set dap.config.java.jdtls_path.",
+      vim.log.levels.WARN
+    )
+    return
+  end
+
+  local handle = vim.uv.spawn(jdtls, {
     args = {
-      "-jar",
-      jdtls_path,
       "-data",
-      config.workspace_path or vim.fn.getcwd() .. "/.jdtls",
+      data_dir,
       "--jvm-arg",
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,quiet=y,address=" .. port,
     },
